@@ -1,0 +1,24 @@
+{
+  "name": "com.kikx.explorer",
+  "title": "Explorer",
+  "version": "0.1.0",
+  "author": "luvbyte",
+  "kikx_version": "0.3.0",
+  "description": "kikx explorer",
+  "category": "Files",
+  "include": ["public", "www"],
+  "storage": {
+    "root": "*",
+    "home": "*",
+    "os": "*",
+    "osr": "*"
+  },
+  "system": {
+    "access": ["invoke"]
+  },
+  "iframe": {
+    "sandbox": ["allow-scripts"]
+  },
+  "sudo": false,
+  "theme": "dark"
+}

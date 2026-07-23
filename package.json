@@ -1,0 +1,31 @@
+{
+  "name": "kikx-explorer-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vueuse/core": "^14.3.0",
+    "highlight.js": "^11.11.1",
+    "kikx-sdk": "1.1.3",
+    "pinia": "^3.0.4",
+    "plyr": "^3.8.4",
+    "vue": "^3.5.32",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.1",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "daisyui": "^5.5.23",
+    "tailwindcss": "^4.3.1",
+    "vite": "^8.0.8",
+    "vite-plugin-vue-devtools": "^8.1.1"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
