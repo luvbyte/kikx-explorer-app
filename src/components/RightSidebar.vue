@@ -52,6 +52,15 @@
               class="toggle"
             />
           </label>
+          <!-- Default Readonly -->
+          <label class="flex justify-between items-center">
+            Readonly File
+            <input
+              v-model="settings.state.readOnly"
+              type="checkbox"
+              class="toggle"
+            />
+          </label>
 
           <div class="divider m-0">Misc</div>
           <!-- Show load circle -->

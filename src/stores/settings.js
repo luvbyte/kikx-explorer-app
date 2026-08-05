@@ -13,6 +13,7 @@ export const useSettings = defineStore("settings", () => {
     // Open file / folder on create
     openOnCreate: true,
     highlightCode: true,
+    readOnly: false,
     // string
     theme: defaultTheme,
     // type: [name, size, modified]

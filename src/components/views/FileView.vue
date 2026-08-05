@@ -36,27 +36,31 @@
     <div class="flex-1 overflow-auto">
       <Loading v-if="loading" />
 
+      <!-- Image -->
       <ImageView
         v-else-if="fileType === 'image'"
         :src="objectUrl"
         :alt="file.name"
       />
 
+      <!-- Hex -->
+      <HexView v-else-if="fileType === 'binary'" :blob="fileBlob" />
+
+      <!-- Audio -->
+      <VideoView v-else-if="fileType === 'video'" :src="objectUrl" />
+
+      <!-- Video -->
+      <AudioView v-else-if="fileType === 'audio'" :src="objectUrl" />
+
+      <!-- Code -->
       <CodeView
         v-else-if="fileType === 'code' && settings.state.highlightCode"
         :content="textContent"
         :language="codeLanguage"
       />
 
-      <HexView v-else-if="fileType === 'binary'" :blob="fileBlob" />
-
-      <VideoView v-else-if="fileType === 'video'" :src="objectUrl" />
-
-      <AudioView v-else-if="fileType === 'audio'" :src="objectUrl" />
-
-      <pre v-else class="h-full overflow-auto p-2 text-sm">{{
-        textContent
-      }}</pre>
+      <!-- Text -->
+      <TextView v-else :textContent="textContent" :defaultReadOnly="settings.state.readOnly" @save="save" />
     </div>
   </div>
 </template>
@@ -73,6 +77,7 @@
   import AudioView from "@/components/views/AudioView.vue";
   import HexView from "@/components/views/HexView.vue";
   import CodeView from "@/components/views/CodeView.vue";
+  import TextView from "@/components/views/TextView.vue";
 
   import { useSettings } from "@/stores/settings";
   const settings = useSettings();
@@ -162,7 +167,18 @@
     return "text";
   });
 
-  onBeforeMount(async () => {
+  async function save(content) {
+    const { data, error } = await fs.writeFile(props.filePath, content);
+
+    if (error) {
+      settings.alert("Error saving file :", error);
+      return;
+    }
+
+    fetchFile();
+  }
+
+  async function fetchFile() {
     // check if file is bigger than 13 MB
     const bytes_size = props.file.size_bytes;
 
@@ -197,7 +213,9 @@
     } finally {
       loading.value = false;
     }
-  });
+  }
+
+  onBeforeMount(fetchFile);
 
   onBeforeUnmount(() => {
     if (objectUrl.value) {

@@ -18,6 +18,7 @@ const appConfigSchema = z.object({
   showLoadCircle: z.boolean(),
   openOnCreate: z.boolean(),
   highlightCode: z.boolean(),
+  readOnly: z.boolean(),
 
   // theme: string
   theme: z.string(),
@@ -45,7 +46,7 @@ const app = createApp();
 if (DEV) {
   app.config.configureUrls({
     apiUrl,
-    appID: "9a7566f39a9d416dbb1039dddb2bb613"
+    appID: "30893b694abc4187940333466a3589e2"
   });
 }
 
