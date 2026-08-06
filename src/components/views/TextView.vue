@@ -84,7 +84,7 @@
     <textarea
       :value="text"
       @input="onInput"
-      class="fscreen textarea focus:outline-none overflow-auto p-2 text-[16px] resize-none border-0"
+      class="fscreen textarea focus:outline-none p-2 text-sm resize-none border-0 overflow-auto whitespace-pre"
       :readonly="readOnly"
       autocorrect="off"
       autocapitalize="off"
@@ -104,7 +104,7 @@
       default: ""
     },
     defaultReadOnly: {
-      type: Boolean,
+      type: Boolean
     }
   });
 

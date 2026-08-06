@@ -37,7 +37,7 @@ export const getUrl = end => {
 // };
 
 // App version
-export const VERSION = "0.1.1";
+export const VERSION = "0.1.2";
 
 // App Default theme
 export const defaultTheme = "dark";

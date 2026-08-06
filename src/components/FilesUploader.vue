@@ -207,9 +207,9 @@
   import Loading from "@/components/Loading.vue";
 
   import { fs } from "@/api";
-  import { useSettings } from "@/stores/settings";
+  import { useErrorStore } from "@/stores/error";
 
-  const settings = useSettings();
+  const errors = useErrorStore();
 
   const showConfirm = ref(false);
 
@@ -277,7 +277,7 @@
     uploading.value = false;
 
     if (res.error) {
-      settings.alert(res.error.detail || "Unknown error", "error");
+      errors.raiseError(res.error.detail || "Error uploading files", "error");
       return;
     }
     emit("update");

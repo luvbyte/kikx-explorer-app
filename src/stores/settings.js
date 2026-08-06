@@ -25,32 +25,7 @@ export const useSettings = defineStore("settings", () => {
     bookmarks: []
   });
 
-  // Alert messages list
-  const alertsStack = ref([]);
-
-  // Show alert
-  function alert(message, type = "info") {
-    alertsStack.value.push({
-      message,
-      type
-    });
-  }
-
-  // Get top alert message
-  function getAlertMessage() {
-    return alertsStack.value.at(0);
-  }
-
-  // Close top alert
-  function closeAlert(index) {
-    alertsStack.value.splice(index, 1);
-  }
-
   return {
-    state,
-    alertsStack,
-    getAlertMessage,
-    alert,
-    closeAlert
+    state
   };
 });

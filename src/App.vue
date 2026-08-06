@@ -29,8 +29,10 @@
   import AlertInput from "@/components/ui/AlertInput.vue";
 
   import { useSettings } from "@/stores/settings";
+  import { useErrorStore } from "@/stores/error";
 
   const settings = useSettings();
+  const errors = useErrorStore();
 
   // Flags
   let changingProtocolOnly = false;
@@ -153,7 +155,7 @@
 
       hasMore.value = res.data.has_more;
     } else {
-      settings.alert(res.error.detail || "Unknown error", "error");
+      errors.raiseError(res.error.detail || "Error loading files", "error");
     }
 
     listLoading.value = false;
@@ -197,7 +199,7 @@
 
         hasMore.value = res.data.has_more;
       } else {
-        settings.alert(res.error.detail || "Unknown error", "error");
+        errors.raiseError(res.error.detail || "Error loading files", "error");
       }
     } finally {
       loadingMore = false;
@@ -269,16 +271,13 @@
 
     if (!name) return;
 
-    console.log(pathType, name, getFilePath(name));
-
     const res =
       pathType === "file"
         ? await fs.createFile(getFilePath(name))
         : await fs.createDirectory(getFilePath(name));
-    //
-    console.log(res);
+
     if (res.error) {
-      settings.alert(res.error.detail || "Unknown error", "error");
+      errors.raiseError(res.error.detail || "Error creating path", "error");
       return;
     }
     await reloadDirectory();
@@ -313,8 +312,8 @@
     const res = await fs.readFile(getFilePath(path.name));
 
     if (res.error) {
-      settings.alert(
-        `Error downloading file '${res.error.detail || "Error downloading file"}'`,
+      errors.raiseError(
+        res.error.detail || "Error downloading file",
         "error"
       );
       return;
@@ -344,7 +343,7 @@
 
     const res = await fs.rename(src, dest);
     if (res.error) {
-      settings.alert(res.error.detail || "Error renaming", "error");
+      errors.raiseError(res.error.detail || "Error renaming", "error");
       return;
     }
 
@@ -363,7 +362,7 @@
 
   async function setWallpaper(file) {
     if (!file.image_type && file.suffix !== ".mp4") {
-      settings.alert("Unsupported wallpaper", "error");
+      errors.raiseError("Unsupported wallpaper", "error");
       return;
     }
 
@@ -380,7 +379,7 @@
     );
 
     if (error) {
-      settings.alert(error.message ?? String(error), "error");
+      errors.raiseError("Error setting wallpaper", "error");
       return;
     }
 
@@ -476,7 +475,7 @@
     const res = await fs.deleteList(paths);
 
     if (res.error) {
-      settings.alert(res.error.detail || "Error deleting files", "error");
+      errors.raiseError(res.error.detail || "Error deleting files", "error");
     } else {
       await reloadDirectory();
     }
@@ -491,7 +490,7 @@
 
     const res = await fs.copy(paths, dest);
     if (res.error) {
-      settings.alert(res.error.detail || "Error copying files", "error");
+      errors.raiseError(res.error.detail || "Error copying files", "error");
     } else {
       await reloadDirectory();
     }
@@ -562,7 +561,7 @@
       : await fs.deleteFile(fpath);
 
     if (res.error) {
-      settings.alert(res.error.detail || "Error deleting file", "error");
+      errors.raiseError(res.error.detail || "Error deleting file", "error");
       return;
     }
     await reloadDirectory();
@@ -927,9 +926,9 @@
     <!-- Global Alerts -->
     <Transition name="fade-scale">
       <Alert
-        v-if="settings.alertsStack.length > 0"
-        :message="settings.getAlertMessage()"
-        @close="settings.closeAlert"
+        v-if="errors.errorStack.length > 0"
+        :message="errors.getErrorMessage()"
+        @close="errors.closeError"
       />
     </Transition>
 

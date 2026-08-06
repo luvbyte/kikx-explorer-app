@@ -10,6 +10,7 @@
 
 <script setup>
   import { ref, onMounted, onBeforeUnmount } from "vue";
+  
   import Plyr from "plyr";
   import "plyr/dist/plyr.css";
 

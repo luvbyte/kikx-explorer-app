@@ -60,7 +60,12 @@
       />
 
       <!-- Text -->
-      <TextView v-else :textContent="textContent" :defaultReadOnly="settings.state.readOnly" @save="save" />
+      <TextView
+        v-else
+        :textContent="textContent"
+        :defaultReadOnly="settings.state.readOnly"
+        @save="save"
+      />
     </div>
   </div>
 </template>
@@ -80,7 +85,10 @@
   import TextView from "@/components/views/TextView.vue";
 
   import { useSettings } from "@/stores/settings";
+  import { useErrorStore } from "@/stores/error";
+
   const settings = useSettings();
+  const errors = useErrorStore();
 
   const emit = defineEmits(["close"]);
   const props = defineProps(["file", "filePath"]);
@@ -171,7 +179,7 @@
     const { data, error } = await fs.writeFile(props.filePath, content);
 
     if (error) {
-      settings.alert("Error saving file :", error);
+      errors.raiseError(error.detail || "Error saving file", "error");
       return;
     }
 
@@ -182,15 +190,15 @@
     // check if file is bigger than 13 MB
     const bytes_size = props.file.size_bytes;
 
-    if (bytes_size > MAX_SIZE * 1024 * 1024) {
-      settings.alert(`File is too large. Maximum size is ${MAX_SIZE} MB.`);
+    if (bytes_size > MAX_SIZE * 1024 * 1024 && fileType.value === "text") {
+      errors.raiseError(`File is too large. Maximum size is ${MAX_SIZE} MB.`);
       emit("close");
       return;
     }
 
     if (unSupportedExtensions.includes(props.file.suffix || "")) {
       // Unsupported format
-      settings.alert(`Unsupported file format '${props.file.suffix}'`);
+      errors.raiseError(`Unsupported file format '${props.file.suffix}'`);
       emit("close");
       return;
     }
