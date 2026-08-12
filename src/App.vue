@@ -312,10 +312,7 @@
     const res = await fs.readFile(getFilePath(path.name));
 
     if (res.error) {
-      errors.raiseError(
-        res.error.detail || "Error downloading file",
-        "error"
-      );
+      errors.raiseError(res.error.detail || "Error downloading file", "error");
       return;
     }
 
@@ -693,6 +690,15 @@
     document.addEventListener("contextmenu", e => {
       if (e.target.tagName === "IMG") {
         e.preventDefault();
+      }
+    });
+
+    window.addEventListener("message", event => {
+      const message = event.data;
+
+      if (message?.event === "app:navigation" && message?.payload === "back") {
+        // Handle back navigation
+        goBack();
       }
     });
 

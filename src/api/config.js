@@ -2,6 +2,12 @@ export const DEV = process.env.NODE_ENV !== "production";
 
 const { protocol, hostname, port } = window.location;
 
+// App version
+export const VERSION = "0.1.3";
+
+// App Default theme
+export const defaultTheme = "dark";
+
 export const apiUrl = DEV
   ? "http://localhost:8000"
   : `${protocol}//${hostname}${port ? `:${port}` : ""}`;
@@ -35,12 +41,6 @@ export const getUrl = end => {
 //   }
 //   return getUrl(`/public/app/${appName}/${icon}`);
 // };
-
-// App version
-export const VERSION = "0.1.2";
-
-// App Default theme
-export const defaultTheme = "dark";
 
 // Fileicons suffix: icon
 export const FILE_ICONS = {

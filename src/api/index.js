@@ -46,7 +46,7 @@ const app = createApp();
 if (DEV) {
   app.config.configureUrls({
     apiUrl,
-    appID: "7f39b1581d4d4d2fbed0c4209961fb2a"
+    appID: "0713e0cebfe540a4a0c8d8853fdde999"
   });
 }
 
