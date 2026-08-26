@@ -646,6 +646,11 @@
     isNavigatingHistory = false;
   }
 
+  function appNavBack() {
+    if (activeFile.value) return;
+    goBack();
+  }
+
   // Load app config and watch changes and save
   async function loadConfigAndWatch() {
     await appConfig.load();
@@ -698,7 +703,7 @@
 
       if (message?.event === "app:navigation" && message?.payload === "back") {
         // Handle back navigation
-        goBack();
+        appNavBack();
       }
     });
 

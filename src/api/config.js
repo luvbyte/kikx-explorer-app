@@ -3,7 +3,7 @@ export const DEV = process.env.NODE_ENV !== "production";
 const { protocol, hostname, port } = window.location;
 
 // App version
-export const VERSION = "0.1.3";
+export const VERSION = "0.1.4";
 
 // App Default theme
 export const defaultTheme = "dark";

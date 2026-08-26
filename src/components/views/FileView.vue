@@ -223,11 +223,25 @@
     }
   }
 
-  onBeforeMount(fetchFile);
+  const appNavBack = event => {
+    const message = event.data;
+    if (message?.event === "app:navigation" && message?.payload === "back") {
+      emit("close");
+    }
+  };
+
+  onBeforeMount(() => {
+    fetchFile();
+
+    window.addEventListener("message", appNavBack);
+  });
 
   onBeforeUnmount(() => {
+    window.removeEventListener("message", appNavBack);
+
     if (objectUrl.value) {
       URL.revokeObjectURL(objectUrl.value);
     }
   });
 </script>
+
