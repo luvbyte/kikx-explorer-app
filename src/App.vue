@@ -10,6 +10,7 @@
   import { watchDebounced } from "@vueuse/core";
 
   import { app, fs, appConfig } from "@/api";
+  import { imageExtensions } from "@/api/config";
 
   import GridView from "@/components/views/GridView.vue";
   import ListView from "@/components/views/ListView.vue";
@@ -36,9 +37,11 @@
 
   // Flags
   let changingProtocolOnly = false;
+
   // Loading States
   const initLoadState = ref(true);
   const listLoading = ref(false);
+  const loadingMore = ref(false);
 
   // home / os / root / osr
   const currentProtocol = ref("home");
@@ -103,6 +106,10 @@
     )
   );
 
+  const imageFiles = computed(() =>
+    visibleFiles.value.filter(file => imageExtensions.includes(file.suffix))
+  );
+
   // Check if currentPath is bookmarked
   const isCurrentPathBookmarked = computed(() => {
     return settings.state.bookmarks.some(
@@ -145,8 +152,6 @@
       asc: settings.state.sort.asc
     });
 
-    console.log(res);
-
     if (res.data) {
       filesList.value = res.data.files.map(item => ({
         ...item,
@@ -171,13 +176,10 @@
     scrollToRight();
   }
 
-  // Load more files if present
-  let loadingMore = false;
-
   async function loadMore() {
-    if (loadingMore || !hasMore.value) return;
+    if (loadingMore.value || !hasMore.value) return;
 
-    loadingMore = true;
+    loadingMore.value = true;
 
     try {
       offset.value += limit.value;
@@ -202,7 +204,7 @@
         errors.raiseError(res.error.detail || "Error loading files", "error");
       }
     } finally {
-      loadingMore = false;
+      loadingMore.value = false;
     }
   }
 
@@ -271,13 +273,13 @@
 
     if (!name) return;
 
-    const res =
+    const { error } =
       pathType === "file"
         ? await fs.createFile(getFilePath(name))
         : await fs.createDirectory(getFilePath(name));
 
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error creating path", "error");
+    if (error) {
+      errors.raiseError(error.detail || "Error creating path", "error");
       return;
     }
     await reloadDirectory();
@@ -305,20 +307,22 @@
 
   // ------------------------- File
 
+  function selectFile(path) {
+    activeFile.value = path;
+  }
+
   // Download file
   async function downloadFile(path) {
     if (path.directory) return;
 
-    const res = await fs.readFile(getFilePath(path.name));
+    const { data, error } = await fs.readFile(getFilePath(path.name));
 
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error downloading file", "error");
+    if (error) {
+      errors.raiseError(error.detail || "Error downloading file", "error");
       return;
     }
 
-    const blob = res.data;
-
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(data);
     const a = document.createElement("a");
 
     a.href = url;
@@ -338,9 +342,9 @@
 
     if (path.name === dest) return;
 
-    const res = await fs.rename(src, dest);
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error renaming", "error");
+    const { error } = await fs.rename(src, dest);
+    if (error) {
+      errors.raiseError(error.detail || "Error renaming", "error");
       return;
     }
 
@@ -469,10 +473,10 @@
     selectedPaths.value.length = 0;
 
     // Paths
-    const res = await fs.deleteList(paths);
+    const { error } = await fs.deleteList(paths);
 
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error deleting files", "error");
+    if (error) {
+      errors.raiseError(error.detail || "Error deleting files", "error");
     } else {
       await reloadDirectory();
     }
@@ -483,16 +487,36 @@
     const paths = copyFilesList.value.map(item => item.kikxpath);
     const dest = getFinalPath();
 
-    console.log(paths, dest);
+    copyFilesList.value.length = 0;
 
-    const res = await fs.copy(paths, dest);
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error copying files", "error");
+    const { error } = await fs.copy(paths, dest);
+    if (error) {
+      errors.raiseError(error.detail || "Error copying files", "error");
     } else {
       await reloadDirectory();
     }
+  }
+
+  // Move selected files (*)
+  async function moveFiles() {
+    const paths = copyFilesList.value.map(item => item.kikxpath);
+    const dest = getFinalPath();
 
     copyFilesList.value.length = 0;
+
+    let copy = await fs.copy(paths, dest);
+    if (copy.error) {
+      errors.raiseError(copy.error.detail || "Error moving files", "error");
+      return;
+    }
+
+    let del = await fs.deleteList(paths);
+    if (del.error) {
+      errors.raiseError(del.error.detail || "Error moving files", "error");
+      return;
+    }
+
+    await reloadDirectory();
   }
 
   // Copy selectedPaths to copyFilesList
@@ -523,7 +547,7 @@
       // history.push(currentPath.value);
       currentPath.value = `${currentPath.value}/${path.name}`;
     } else {
-      activeFile.value = path;
+      selectFile(path);
     }
   }
 
@@ -547,18 +571,19 @@
 
   // Delete path
   async function deletePath(path, force = false) {
+    activeFile.value = null;
+
     const fpath = getFilePath(path.name);
-    console.log("DELETE: ", fpath);
 
     // Future guard (TODO)
     // if (["root", "osr"].includes(currentProtocol.value)) return;
 
-    const res = path.directory
+    const { error } = path.directory
       ? await fs.deleteDirectory(fpath)
       : await fs.deleteFile(fpath);
 
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error deleting file", "error");
+    if (error) {
+      errors.raiseError(error.detail || "Error deleting file", "error");
       return;
     }
     await reloadDirectory();
@@ -824,6 +849,7 @@
         :updateCopyFilesList="updateCopyFilesList"
         :copyFilesList="copyFilesList"
         :copyFiles="copyFiles"
+        :moveFiles="moveFiles"
         @close="toggleMultiSelectMode"
       />
     </Transition>
@@ -895,6 +921,23 @@
         v-if="copyFilesList.length > 0"
         @reset="copyFilesList.length = 0"
         @copy="copyFiles"
+        @move="moveFiles"
+      />
+    </Transition>
+
+    <!-- File View -->
+    <Transition name="fade-scale">
+      <FileView
+        v-if="activeFile"
+        :file="activeFile"
+        :filePath="getFilePath(activeFile.name)"
+        :imageFiles="imageFiles"
+        :getFilePath="getFilePath"
+        :loadMore="loadMore"
+        :loadingMore="loadingMore"
+        @select="selectFile"
+        @menu="onPathLongPress"
+        @close="activeFile = null"
       />
     </Transition>
 
@@ -911,16 +954,6 @@
         :shareFile="shareFile"
         :setWallpaper="setWallpaper"
         @close="fileContextMenu = null"
-      />
-    </Transition>
-
-    <!-- File View -->
-    <Transition name="fade-scale">
-      <FileView
-        v-if="activeFile"
-        :file="activeFile"
-        :filePath="getFilePath(activeFile.name)"
-        @close="activeFile = null"
       />
     </Transition>
 

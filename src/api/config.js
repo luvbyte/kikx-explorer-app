@@ -3,7 +3,7 @@ export const DEV = process.env.NODE_ENV !== "production";
 const { protocol, hostname, port } = window.location;
 
 // App version
-export const VERSION = "0.1.4";
+export const VERSION = "0.1.5";
 
 // App Default theme
 export const defaultTheme = "dark";
@@ -90,3 +90,81 @@ export const getFileIcon = (suffix, mime = null) => {
   // Fall back to extension
   return `${base}/${FILE_ICONS[suffix] || "default.svg"}`;
 };
+
+// Arrays
+
+export const imageExtensions = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".svg",
+  ".ico"
+];
+
+export const binaryExtensions = [
+  "",
+  ".bin",
+  ".dat",
+  ".dll",
+  ".so",
+  ".o",
+  ".class",
+  ".wasm"
+];
+
+export const unSupportedExtensions = [
+  // Archives
+  ".zip",
+  ".rar",
+  ".7z",
+  ".tar",
+  ".gz",
+  ".bz2",
+
+  // Executables
+  ".exe",
+  ".msi",
+  ".apk",
+  ".dmg",
+  ".pkg",
+  ".app",
+  ".deb",
+  ".rpm"
+];
+
+export const codeExtensions = [
+  ".js",
+  ".mjs",
+  ".cjs",
+  ".ts",
+  ".vue",
+  ".json",
+  ".html",
+  ".htm",
+  ".css",
+  ".scss",
+  ".xml",
+  ".py",
+  ".sh"
+];
+
+export const videoExtensions = [
+  ".mp4",
+  ".webm",
+  ".mov",
+  ".avi",
+  ".mkv",
+  ".m4v"
+];
+
+export const audioExtensions = [
+  ".mp3",
+  ".wav",
+  ".ogg",
+  ".aac",
+  ".flac",
+  ".m4a"
+];

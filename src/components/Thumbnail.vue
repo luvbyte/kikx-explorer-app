@@ -1,7 +1,7 @@
 <template>
   <div class="overflow-hidden aspect-square rounded object-cover">
     <Loading v-if="!imageUrl" />
-    <img v-else :src="imageUrl" />
+    <img v-else :src="imageUrl" class="fscreen object-cover" />
   </div>
 </template>
 
@@ -18,13 +18,13 @@
   const imageUrl = ref("");
 
   onBeforeMount(async () => {
-    const res = await fs.thumbnail(props.path);
+    const { error, data } = await fs.thumbnail(props.path);
 
-    if (res.error) {
-      console.error(err);
+    if (error) {
+      console.error(error);
     }
 
-    imageUrl.value = URL.createObjectURL(res.data);
+    imageUrl.value = URL.createObjectURL(data);
   });
 
   onUnmounted(() => {

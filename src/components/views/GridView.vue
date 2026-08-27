@@ -1,7 +1,7 @@
 <template>
   <div
-    class="p-2 grid gap-2"
-    style="grid-template-columns: repeat(auto-fit, minmax(80px, 1fr))"
+    class="p-2 grid gap-2 justify-start"
+    style="grid-template-columns: repeat(auto-fit, minmax(80px, max-content))"
   >
     <div
       v-for="path in visibleFiles"

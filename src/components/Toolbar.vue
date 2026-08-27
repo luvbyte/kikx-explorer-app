@@ -27,7 +27,10 @@
   >
     <!-- Nav buttons -->
     <div class="flex items-center bg-primary/40 text-primary-content">
-      <button @click="emit('goUp')" class="p-1 active:bg-primary transition-colors">
+      <button
+        @click="emit('goUp')"
+        class="p-1 active:bg-primary transition-colors"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -41,7 +44,10 @@
           />
         </svg>
       </button>
-      <button @click="emit('goBack')" class="p-1 active:bg-primary transition-colors">
+      <button
+        @click="emit('goBack')"
+        class="p-1 active:bg-primary transition-colors"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -222,10 +228,9 @@
           />
         </svg>
       </button>
-
       <button
         @click="emit('bookmark')"
-        class="p-1 active:bg-primary/60 transition-colors"
+        class="p-1 transition-colors"
         :class="{ 'bg-primary': isCurrentPathBookmarked }"
       >
         <svg

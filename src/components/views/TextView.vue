@@ -3,7 +3,7 @@
     <div class="bg-base-200 flex justify-between gap-2 p-2">
       <div class="flex gap-2">
         <button
-          class="btn btn-secondary btn-soft btn-sm"
+          class="btn btn-secondary btn-soft btn-xs"
           :disabled="!canUndo"
           @click="undo"
         >
@@ -21,7 +21,7 @@
           </svg>
         </button>
         <button
-          class="btn btn-info btn-soft btn-sm"
+          class="btn btn-info btn-soft btn-xs"
           :disabled="!canRedo"
           @click="redo"
         >
@@ -42,7 +42,7 @@
 
       <div class="flex gap-2">
         <button
-          class="btn btn-sm"
+          class="btn btn-xs"
           :class="readOnly ? 'btn-primary' : ''"
           @click="readOnly = !readOnly"
         >
@@ -61,7 +61,7 @@
         </button>
 
         <button
-          class="btn btn-primary btn-sm"
+          class="btn btn-primary btn-xs"
           :disabled="!isDirty"
           @click="save"
         >
@@ -84,7 +84,7 @@
     <textarea
       :value="text"
       @input="onInput"
-      class="fscreen textarea focus:outline-none p-2 text-sm resize-none border-0 overflow-auto whitespace-pre"
+      class="fscreen textarea focus:outline-none p-2 text-sm resize-none border-0 overflow-auto whitespace-pre rounded-none"
       :readonly="readOnly"
       autocorrect="off"
       autocapitalize="off"

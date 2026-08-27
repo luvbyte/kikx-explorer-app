@@ -10,10 +10,10 @@
     "visibleFiles",
     "toggleSelectAll",
     "deleteSelectedFiles",
-
     "updateCopyFilesList",
     "copyFilesList",
-    "copyFiles"
+    "copyFiles",
+    "moveFiles"
   ]);
 
   // Temp hold files
@@ -100,6 +100,24 @@
           <path
             fill="currentColor"
             d="M19 2h-4.18C14.4.84 13.3 0 12 0S9.6.84 9.18 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-7 0c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1m7 18H5V4h2v3h10V4h2z"
+          />
+        </svg>
+      </button>
+      <button
+        class="p-1 rounded active:enabled:bg-primary active:enabled:text-primary-content disabled:text-base-content/40 transition-colors"
+        :disabled="copyFilesList.length <= 0"
+        @click="moveFiles"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 32 32"
+        >
+          <path d="M0 0h32v32H0z" fill="none" />
+          <path
+            fill="currentColor"
+            d="m25 11l-1.41 1.41L26.17 15H17V5.83l2.59 2.58L21 7l-5-5l-5 5l1.41 1.41L15 5.83V15H5.83l2.58-2.59L7 11l-5 5l5 5l1.41-1.41L5.83 17H15v9.17l-2.59-2.58L11 25l5 5l5-5l-1.41-1.41L17 26.17V17h9.17l-2.58 2.59L25 21l5-5z"
           />
         </svg>
       </button>
