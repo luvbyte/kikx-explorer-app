@@ -9,7 +9,7 @@
   } from "vue";
   import { watchDebounced } from "@vueuse/core";
 
-  import { app, fs, appConfig } from "@/api";
+  import { app, fs, appConfig, invoker } from "@/api";
   import { imageExtensions } from "@/api/config";
 
   import GridView from "@/components/views/GridView.vue";
@@ -72,6 +72,9 @@
 
   const currentAlert = ref(null);
 
+  // Exposed uid
+  const exposedUID = ref(null);
+
   // Active File (preview): path {} / null
   const activeFile = ref(null);
   // Show file context menu
@@ -121,6 +124,27 @@
 
   // ------------------------- Path
 
+  async function updateExpose() {
+    await fs.clearExpose();
+    const { data, error } = await fs.expose(`${currentProtocol.value}://`);
+
+    if (error) {
+      return;
+    }
+
+    exposedUID.value = data.uid;
+  }
+
+  // Exposed path of that file
+  const getExposeFilePath = file => {
+    if (!file) return null;
+
+    const path = currentPath.value;
+    const relativePath = file.kikxpath.split("://").pop();
+
+    return fs.getServeAbsUrl(exposedUID.value, relativePath);
+  };
+
   // Get kikxpath using proto, path
   const getFinalPath = () => {
     let path = currentPath.value;
@@ -145,25 +169,27 @@
   async function updateCurrentPathList() {
     listLoading.value = true;
 
-    const res = await fs.listFilesLimit(getFinalPath(), {
+    const { data, error } = await fs.listFiles(getFinalPath(), {
       offset: offset.value,
       limit: limit.value,
       sort: settings.state.sort.type,
-      asc: settings.state.sort.asc
+      asc: settings.state.sort.asc,
+      thumbnails: true
     });
 
-    if (res.data) {
-      filesList.value = res.data.files.map(item => ({
-        ...item,
-        kikxpath: getFilePath(item.name)
-      }));
+    listLoading.value = false;
 
-      hasMore.value = res.data.has_more;
-    } else {
-      errors.raiseError(res.error.detail || "Error loading files", "error");
+    if (error) {
+      errors.raiseError(error.detail || "Error loading files", "error");
+      return;
     }
 
-    listLoading.value = false;
+    filesList.value = data.files.map(item => ({
+      ...item,
+      kikxpath: getFilePath(item.name)
+    }));
+
+    hasMore.value = data.has_more;
   }
 
   async function reloadDirectory() {
@@ -181,31 +207,31 @@
 
     loadingMore.value = true;
 
-    try {
-      offset.value += limit.value;
+    offset.value += limit.value;
 
-      const res = await fs.listFilesLimit(getFinalPath(), {
-        offset: offset.value,
-        limit: limit.value,
-        sort: settings.state.sort.type,
-        asc: settings.state.sort.asc
-      });
+    const { data, error } = await fs.listFiles(getFinalPath(), {
+      offset: offset.value,
+      limit: limit.value,
+      sort: settings.state.sort.type,
+      asc: settings.state.sort.asc,
+      thumbnails: true
+    });
 
-      if (res.data) {
-        filesList.value.push(
-          ...res.data.files.map(item => ({
-            ...item,
-            kikxpath: getFilePath(item.name)
-          }))
-        );
+    loadingMore.value = false;
 
-        hasMore.value = res.data.has_more;
-      } else {
-        errors.raiseError(res.error.detail || "Error loading files", "error");
-      }
-    } finally {
-      loadingMore.value = false;
+    if (error) {
+      errors.raiseError(error.detail || "Error loading files", "error");
+      return;
     }
+
+    filesList.value.push(
+      ...data.files.map(item => ({
+        ...item,
+        kikxpath: getFilePath(item.name)
+      }))
+    );
+
+    hasMore.value = data.has_more;
   }
 
   // Switch Protocol without autochanging path
@@ -308,31 +334,53 @@
   // ------------------------- File
 
   function selectFile(path) {
+    if (path.suffix === ".kikx") {
+      invoker.openApp("com.kikx.appstore", {
+        query: { uri: path.kikxpath }
+      });
+
+      return;
+    }
+
     activeFile.value = path;
+  }
+
+  // Get minutes by size
+  function getExposeMinutes(sizeBytes, speedMbps = 5) {
+    const bits = sizeBytes * 8;
+    const seconds = bits / (speedMbps * 1_000_000);
+
+    // Add 2x safety margin
+    const minutes = (seconds * 2) / 60;
+
+    // Minimum 5 min, maximum 240 min
+    return Math.min(240, Math.max(5, Math.ceil(minutes)));
   }
 
   // Download file
   async function downloadFile(path) {
     if (path.directory) return;
 
-    const { data, error } = await fs.readFile(getFilePath(path.name));
+    const filename = path.name;
+    const fileSize = path.size_bytes;
+    const expireMinutes = getExposeMinutes(fileSize);
+
+    const { data, error } = await fs.expose(path.kikxpath, expireMinutes);
 
     if (error) {
       errors.raiseError(error.detail || "Error downloading file", "error");
       return;
     }
 
-    const url = URL.createObjectURL(data);
-    const a = document.createElement("a");
+    const url = fs.getServeAbsUrl(data.uid);
 
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${path.name}${path.suffix}`; // filename shown to user
+    a.download = filename;
 
     document.body.appendChild(a);
     a.click();
     a.remove();
-
-    URL.revokeObjectURL(url);
   }
 
   // Rename file
@@ -353,12 +401,7 @@
 
   // Share file path
   async function shareFile(path) {
-    await app.system.invoke("action", {
-      name: "share",
-      options: {
-        item: getFilePath(path.name)
-      }
-    });
+    await invoker.share(path.kikxpath);
   }
 
   async function setWallpaper(file) {
@@ -384,12 +427,7 @@
       return;
     }
 
-    await app.system.invoke("action", {
-      name: "set-wallpaper",
-      options: {
-        url: `/files/${tempFile}`
-      }
-    });
+    await invoker.setWallpaper(`/files/${tempFile}`);
   }
 
   // ------------------------- Bookmark
@@ -593,6 +631,7 @@
 
   // Watch and update currentPath
   watch(currentProtocol, (newProto, oldProto) => {
+    updateExpose();
     if (isNavigatingHistory || changingProtocolOnly) return;
     currentPath.value = "";
   });
@@ -616,6 +655,7 @@
 
     await reloadDirectory();
   });
+
   // ------------------------- Navigation
   // Move step ex: some/hello -> some
   async function goUp() {
@@ -671,9 +711,30 @@
     isNavigatingHistory = false;
   }
 
+  let lastBackPress = 0;
+
   function appNavBack() {
-    if (activeFile.value) return;
-    goBack();
+    const now = Date.now();
+    const isRoot = !currentPath.value.replace(/^\/|\/$/g, "");
+
+    if (isRoot) {
+      if (now - lastBackPress < 2000) {
+        app.system.closeApp();
+        return;
+      }
+
+      lastBackPress = now;
+
+      // ...
+      return;
+    }
+
+    // Normal navigation
+    if (historyIndex <= 0) {
+      goUp();
+    } else {
+      goBack();
+    }
   }
 
   // Load app config and watch changes and save
@@ -697,9 +758,7 @@
 
   async function init() {
     // Load app info
-    const info = await app.fetchAppInfo();
-
-    const initPath = info.options.query.path;
+    const initPath = app.info.options.query.path;
 
     if (typeof initPath === "string") {
       const [proto, path] = initPath.split("://");
@@ -723,23 +782,30 @@
       }
     });
 
-    window.addEventListener("message", event => {
-      const message = event.data;
+    // App navigation
+    app.onMessage("app:navigation", payload => {
+      if (payload !== "back") return;
 
-      if (message?.event === "app:navigation" && message?.payload === "back") {
-        // Handle back navigation
+      if (fileContextMenu.value) {
+        fileContextMenu.value = null;
+      } else if (activeFile.value) {
+        activeFile.value = null;
+      } else {
         appNavBack();
       }
     });
 
     await loadConfigAndWatch();
     await reloadDirectory();
+    await updateExpose();
 
     initLoadState.value = false;
   }
 
   // Initial load
-  onMounted(init);
+  onMounted(() => {
+    app.run(init);
+  });
 </script>
 
 <template>
@@ -751,6 +817,7 @@
   >
     <!-- Header -->
     <Header @l="showLSidebar = true" @r="showRSidebar = true" />
+
     <!-- Current Protocol & Path -->
     <div
       class="flex justify-between items-center bg-primary/60 text-primary-content"
@@ -824,6 +891,7 @@
         </svg>
       </button>
     </div>
+
     <!-- Toolbar -->
     <Toolbar
       :listLoading="listLoading"
@@ -838,6 +906,7 @@
       @menu="() => (showRightMenu = true)"
       @bookmark="toggleBookmarkCurrentPath"
     />
+
     <!-- Selected Paths Info -->
     <Transition name="fade">
       <SelectedPathsInfo
@@ -848,11 +917,11 @@
         :deleteSelectedFiles="deleteSelectedFiles"
         :updateCopyFilesList="updateCopyFilesList"
         :copyFilesList="copyFilesList"
-        :copyFiles="copyFiles"
-        :moveFiles="moveFiles"
-        @close="toggleMultiSelectMode"
+        @copy="copyFiles"
+        @move="moveFiles"
       />
     </Transition>
+
     <!-- Loading effects -->
     <Loading v-if="settings.state.showLoadCircle && listLoading" />
     <div v-else-if="listLoading" class="flex-1"></div>
@@ -862,17 +931,18 @@
       v-else
       ref="listContainer"
       @scroll="onScroll"
-      class="flex-1 overflow-y-auto"
+      class="flex-1 overflow-y-auto select-none"
     >
       <!-- Grid Icons -->
       <GridView
         v-if="settings.state.iconsView === 'grid'"
         :visibleFiles="visibleFiles"
         :multiSelectMode="multiSelectMode"
-        :selectedPaths="selectedPaths"
         :getFilePath="getFilePath"
-        :onClick="onPathClick"
-        :onLongPress="onPathLongPress"
+        :selectedPaths="selectedPaths"
+        :stem="settings.state.hideExtension"
+        @select="onPathClick"
+        @long="onPathLongPress"
       />
       <!-- List Icons -->
       <ListView
@@ -880,9 +950,10 @@
         :visibleFiles="visibleFiles"
         :multiSelectMode="multiSelectMode"
         :selectedPaths="selectedPaths"
+        :stem="settings.state.hideExtension"
         :getFilePath="getFilePath"
-        :onClick="onPathClick"
-        :onLongPress="onPathLongPress"
+        @select="onPathClick"
+        @long="onPathLongPress"
       />
     </div>
 
@@ -930,7 +1001,7 @@
       <FileView
         v-if="activeFile"
         :file="activeFile"
-        :filePath="getFilePath(activeFile.name)"
+        :getExposeFilePath="getExposeFilePath"
         :imageFiles="imageFiles"
         :getFilePath="getFilePath"
         :loadMore="loadMore"

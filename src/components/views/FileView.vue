@@ -37,30 +37,31 @@
     </Transition>
 
     <div class="flex-1 overflow-auto">
-      <Loading v-if="loading" />
-
       <!-- Image -->
       <ImageView
-        v-else-if="fileType === 'image'"
-        :src="objectUrl"
+        v-if="fileType === 'image'"
+        :src="getExposeFilePath(file)"
         :alt="file.name"
         @click="toggleMenu"
       />
 
-      <!-- Hex -->
-      <HexView v-else-if="fileType === 'binary'" :blob="fileBlob" />
+      <!-- Video -->
+      <VideoView
+        v-else-if="fileType === 'video'"
+        :src="getExposeFilePath(file)"
+      />
 
       <!-- Audio -->
-      <VideoView v-else-if="fileType === 'video'" :src="objectUrl" />
-
-      <!-- Video -->
-      <AudioView v-else-if="fileType === 'audio'" :src="objectUrl" />
+      <AudioView
+        v-else-if="fileType === 'audio'"
+        :src="getExposeFilePath(file)"
+      />
 
       <!-- Code -->
       <CodeView
         v-else-if="fileType === 'code' && settings.state.highlightCode"
         :content="textContent"
-        :language="codeLanguage"
+        :language="file.suffix"
       />
 
       <!-- Text -->
@@ -68,7 +69,7 @@
         v-else
         :textContent="textContent"
         :defaultReadOnly="settings.state.readOnly"
-        @save="save"
+        @save="saveFile"
       />
     </div>
 
@@ -121,7 +122,6 @@
   import ImageView from "@/components/views/ImageView.vue";
   import VideoView from "@/components/views/VideoView.vue";
   import AudioView from "@/components/views/AudioView.vue";
-  import HexView from "@/components/views/HexView.vue";
   import CodeView from "@/components/views/CodeView.vue";
   import TextView from "@/components/views/TextView.vue";
 
@@ -131,31 +131,44 @@
   const settings = useSettings();
   const errors = useErrorStore();
 
-  const props = defineProps([
-    "file",
-    "filePath",
-    "imageFiles",
-    "getFilePath",
-    "loadMore",
-    "loadingMore"
-  ]);
+  const props = defineProps({
+    file: {
+      type: Object,
+      required: true
+    },
+    imageFiles: {
+      type: Array,
+      required: true
+    },
+    getFilePath: {
+      type: Function,
+      required: true
+    },
+    getExposeFilePath: {
+      type: Function,
+      required: true
+    },
+    loadMore: {
+      type: Function,
+      required: true
+    },
+    loadingMore: {
+      type: Boolean,
+      required: true
+    }
+  });
   const emit = defineEmits(["close", "select", "menu"]);
 
-  const loading = ref(true);
+  const MAX_SIZE = 13;
   const textContent = ref("");
-
-  const objectUrl = ref("");
-  const fileBlob = ref(null);
-
-  const MAX_SIZE = 18;
 
   const showTitle = ref(true);
   const showMenu = ref(true);
 
   const thumbnailsRef = ref(null);
-  const previewLoading = ref(false);
 
   const extension = computed(() => (props.file.suffix || "").toLowerCase());
+  const filePath = computed(() => props.getFilePath(props.file.name));
 
   const fileType = computed(() => {
     // if no extension
@@ -167,6 +180,7 @@
     return "text";
   });
 
+  // Images thumbnails panel scroll
   function onScroll(e) {
     const el = e.currentTarget;
 
@@ -175,6 +189,7 @@
     }
   }
 
+  // Scroll to thumbnail
   async function scrollToThumbnail() {
     await nextTick();
 
@@ -194,6 +209,7 @@
     });
   }
 
+  // Toggle menu
   function toggleMenu() {
     if (showTitle.value) {
       showTitle.value = false;
@@ -220,39 +236,26 @@
   function nextImage() {
     const index = moveIndex(props.imageFiles, props.file, true);
     emit("select", props.imageFiles[index]);
-
-    nextTick(fetchFile);
   }
 
   function prevImage() {
     const index = moveIndex(props.imageFiles, props.file, false);
     emit("select", props.imageFiles[index]);
-
-    nextTick(fetchFile);
   }
 
+  // Change active file
   function selectFile(file) {
     emit("select", file);
-
-    nextTick(fetchFile);
   }
 
+  // File menu
   function selectMenu(file = null) {
     emit("menu", file || props.file);
   }
 
-  async function save(content) {
-    const { data, error } = await fs.writeFile(props.filePath, content);
-
-    if (error) {
-      errors.raiseError(error.detail || "Error saving file", "error");
-      return;
-    }
-
-    fetchFile();
-  }
-
   async function fetchFile() {
+    if (!["code", "text", "binary"].includes(fileType.value)) return;
+
     // check if file is bigger than 13 MB
     const bytes_size = props.file.size_bytes;
 
@@ -269,53 +272,36 @@
       return;
     }
 
-    try {
-      const { data, error } = await fs.readFile(props.filePath);
-      if (error) {
-        errors.raiseError(error.detail || "Error reading file", "error");
-        emit("close");
-        return;
-      }
-      if (
-        fileType.value === "image" ||
-        fileType.value === "video" ||
-        fileType.value === "audio"
-      ) {
-        objectUrl.value = URL.createObjectURL(data);
-      } else {
-        textContent.value = await data.text();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      loading.value = false;
+    const { data, error } = await fs.readFile(filePath.value);
+
+    if (error) {
+      errors.raiseError(error.detail || "Error reading file", "error");
+      emit("close");
+      return;
     }
+
+    console.log(textContent.value);
+
+    textContent.value = await data.text();
   }
 
-  const appNavBack = event => {
-    const message = event.data;
-    if (message?.event === "app:navigation" && message?.payload === "back") {
-      emit("close");
+  async function saveFile(content) {
+    const { data, error } = await fs.writeFile(filePath.value, content);
+
+    if (error) {
+      errors.raiseError(error.detail || "Error saving file", "error");
+      return;
     }
-  };
+
+    fetchFile();
+  }
 
   onBeforeMount(() => {
-    fetchFile();
-
     if (fileType.value == "image") {
       showTitle.value = false;
-    }
-
-    scrollToThumbnail();
-
-    window.addEventListener("message", appNavBack);
-  });
-
-  onBeforeUnmount(() => {
-    window.removeEventListener("message", appNavBack);
-
-    if (objectUrl.value) {
-      URL.revokeObjectURL(objectUrl.value);
+      scrollToThumbnail();
+    } else {
+      fetchFile();
     }
   });
 </script>

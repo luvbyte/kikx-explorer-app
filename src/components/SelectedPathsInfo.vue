@@ -5,16 +5,33 @@
 
   import { formatBytes } from "@/api/utils";
 
-  const props = defineProps([
-    "selectedPaths",
-    "visibleFiles",
-    "toggleSelectAll",
-    "deleteSelectedFiles",
-    "updateCopyFilesList",
-    "copyFilesList",
-    "copyFiles",
-    "moveFiles"
-  ]);
+  const props = defineProps({
+    selectedPaths: {
+      type: Array,
+      required: true
+    },
+    visibleFiles: {
+      type: Array,
+      required: true
+    },
+    toggleSelectAll: {
+      type: Function,
+      required: true
+    },
+    deleteSelectedFiles: {
+      type: Function,
+      required: true
+    },
+    updateCopyFilesList: {
+      type: Function,
+      required: true
+    },
+    copyFilesList: {
+      type: Array,
+      required: true
+    }
+  });
+  const emits = defineEmits(["move", "copy"]);
 
   // Temp hold files
   const confirmDeleteAlert = ref(false);
@@ -67,28 +84,19 @@
           xmlns="http://www.w3.org/2000/svg"
           width="24"
           height="24"
-          viewBox="0 0 24 24"
+          viewBox="0 0 32 32"
         >
-          <path d="M0 0h24v24H0z" fill="none" />
-          <g
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-width="1.5"
-          >
-            <path
-              d="M20.998 10c-.012-2.175-.108-3.353-.877-4.121C19.243 5 17.828 5 15 5h-3c-2.828 0-4.243 0-5.121.879C6 6.757 6 8.172 6 11v5c0 2.828 0 4.243.879 5.121C7.757 22 9.172 22 12 22h3c2.828 0 4.243 0 5.121-.879C21 20.243 21 18.828 21 16v-1"
-            />
-            <path
-              d="M3 10v6a3 3 0 0 0 3 3M18 5a3 3 0 0 0-3-3h-4C7.229 2 5.343 2 4.172 3.172C3.518 3.825 3.229 4.7 3.102 6"
-            />
-          </g>
+          <path d="M0 0h32v32H0z" fill="none" />
+          <path
+            fill="currentColor"
+            d="M7 7h3v3h12V7h3v11h2V7a2.006 2.006 0 0 0-2-2h-3V4a2.006 2.006 0 0 0-2-2h-8a2.006 2.006 0 0 0-2 2v1H7a2.006 2.006 0 0 0-2 2v21a2.006 2.006 0 0 0 2 2h9v-2H7zm5-3h8v4h-8zm18 20h-8.172l2.586-2.586L23 20l-5 5l5 5l1.414-1.414L21.828 26H30zM12 13h-2v2h2zm10 0h-8v2h8zm-10 5h-2v2h2zm-2 7h2v-2h-2zm4-5h4v-2h-4z"
+          />
         </svg>
       </button>
       <button
         class="p-1 rounded active:enabled:bg-primary active:enabled:text-primary-content disabled:text-base-content/40 transition-colors"
         :disabled="copyFilesList.length <= 0"
-        @click="copyFiles"
+        @click="emit('copy')"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +114,7 @@
       <button
         class="p-1 rounded active:enabled:bg-primary active:enabled:text-primary-content disabled:text-base-content/40 transition-colors"
         :disabled="copyFilesList.length <= 0"
-        @click="moveFiles"
+        @click="emit('move')"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

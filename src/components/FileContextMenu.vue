@@ -9,16 +9,39 @@
   import FileIcon from "@/components/FileIcon.vue";
   import ScrollingText from "@/components/ui/ScrollingText.vue";
 
-  const props = defineProps([
-    "path",
-    "filePath",
-    "deletePath",
-    "downloadFile",
-    "renameFile",
-    "shareFile",
-    "setWallpaper"
-  ]);
+  const props = defineProps({
+    path: {
+      type: Object,
+      required: true
+    },
+    filePath: {
+      type: String,
+      required: true
+    },
+    deletePath: {
+      type: Function,
+      required: true
+    },
+    downloadFile: {
+      type: Function,
+      required: true
+    },
+    renameFile: {
+      type: Function,
+      required: true
+    },
+    shareFile: {
+      type: Function,
+      required: true
+    },
+    setWallpaper: {
+      type: Function,
+      required: true
+    }
+  });
   const emit = defineEmits(["close"]);
+
+  const showKikxPath = ref(true);
 
   const confirmDeleteAlert = ref(false);
   const showRenameDialouge = ref(false);
@@ -76,24 +99,6 @@
     class="fixed p-8 inset-0 fscreen z-60 bg-black/60 text-white flex flex-col items-center gap-4"
   >
     <!-- Close Button -->
-    <button
-      @click="emit('close')"
-      class="absolute right-4 top-4 p-2 bg-base-100/20 rounded-full border border-base-content/20"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-      >
-        <path d="M0 0h24v24H0z" fill="none" />
-        <path
-          fill="currentColor"
-          d="m12 13.4l-4.9 4.9q-.275.275-.7.275t-.7-.275t-.275-.7t.275-.7l4.9-4.9l-4.9-4.9q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l4.9 4.9l4.9-4.9q.275-.275.7-.275t.7.275t.275.7t-.275.7L13.4 12l4.9 4.9q.275.275.275.7t-.275.7t-.7.275t-.7-.275z"
-        />
-      </svg>
-    </button>
-
     <div class="rounded bg-base-100/20 p-4 border border-base-content/20">
       <img
         v-if="path.directory"
@@ -119,9 +124,10 @@
 
     <div
       class="rounded border border-base-content/10 bg-base-100/20 p-2 max-w-[95%] overflow-x-auto scrollbar-hide"
+      @click="showKikxPath = !showKikxPath"
     >
       <code class="whitespace-nowrap text-xs">
-        {{ path.absolute_path }}
+        {{ showKikxPath ? path.kikxpath : path.absolute_path }}
       </code>
     </div>
 

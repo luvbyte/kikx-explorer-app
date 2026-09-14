@@ -13,7 +13,10 @@
       ref="image"
       :src="src"
       :alt="alt"
-      class="max-w-full max-h-full object-contain pointer-events-none transition-transform duration-75 ease-out"
+      :class="[
+        'max-w-full max-h-full object-contain pointer-events-none',
+        !isDragging ? 'transition-transform duration-75 ease-out' : ''
+      ]"
       :style="{
         transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
         transformOrigin: 'center center'
@@ -38,6 +41,7 @@
   const scale = ref(1);
   const translateX = ref(0);
   const translateY = ref(0);
+  const isDragging = ref(false); // Tracks if the user is currently interacting
 
   const MIN_SCALE = 1;
   const MAX_SCALE = 5;
@@ -87,6 +91,8 @@
   const onPointerDown = e => {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    isDragging.value = true; // Disable transitions while fingers are down
 
     if (pointers.size === 1) {
       dragStartX = e.clientX;
@@ -170,6 +176,8 @@
 
     // Snap back or snap to bounds when fingers are released
     if (pointers.size === 0) {
+      isDragging.value = false; // Re-enable transitions for snap-back
+
       if (scale.value < MIN_SCALE) {
         reset();
       } else if (scale.value > MAX_SCALE) {

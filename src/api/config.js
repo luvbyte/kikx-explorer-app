@@ -3,7 +3,7 @@ export const DEV = process.env.NODE_ENV !== "production";
 const { protocol, hostname, port } = window.location;
 
 // App version
-export const VERSION = "0.1.5";
+export const VERSION = "0.1.6";
 
 // App Default theme
 export const defaultTheme = "dark";
@@ -80,7 +80,9 @@ export const FILE_ICONS = {
   ".cr2": "image.svg",
   ".nef": "image.svg",
   ".arw": "image.svg",
-  ".dng": "image.svg"
+  ".dng": "image.svg",
+  
+  ".kikx": "kikx.png"
 };
 
 // Get icon with suffix

@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full overflow-auto">
+  <div class="h-full overflow-auto bg-base-100 text-base-content">
     <pre class="m-0 p-3 text-sm"><code
         ref="codeEl"
         :class="language ? `language-${language}` : ''"
@@ -66,7 +66,7 @@
     ".py": "python"
   };
 
-  const codeLanguage = computed(() => languageMap[extension.value] || "");
+  // const codeLanguage = computed(() => languageMap[extension.value] || "");
 
   const codeEl = ref();
 
@@ -77,7 +77,7 @@
 
     if (props.language) {
       codeEl.value.innerHTML = hljs.highlight(props.content, {
-        language: props.language,
+        language: languageMap[props.language] || "",
         ignoreIllegals: true
       }).value;
     } else {

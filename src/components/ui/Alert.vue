@@ -5,7 +5,7 @@
   >
     <div
       class="border-2 bg-base-100 text-base-content rounded-lg shadow-lg w-[90vw] h-32 max-w-md flex items-center justify-center"
-      :class="classList()"
+      :class="classList(message.type)"
     >
       <p class="p-4 break-words overflow-y-auto max-h-60">
         {{ message.message }}
@@ -17,14 +17,18 @@
 <script setup>
   import { ref } from "vue";
 
-  const props = defineProps(["message"]);
+  defineProps({
+    message: {
+      type: Object,
+      required: true
+    }
+  });
+  const emit = defineEmits(["close"]);
 
-  const classList = () =>
+  const classList = type =>
     ({
       info: "border-info/20",
       error: "border-error/20",
       warning: "border-warning/20"
-    })[props.message.type] || "border-info/20";
-
-  const emit = defineEmits(["close"]);
+    })[type] || "border-info/20";
 </script>

@@ -1,25 +1,34 @@
 {
   "name": "com.kikx.explorer",
   "title": "Explorer",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "luvbyte",
-  "kikx_version": "0.3.4",
+  "kikx_version": "0.4.0",
   "description": "kikx explorer",
   "category": "Files",
+
   "include": ["public", "www"],
-  "storage": {
-    "root": "*",
-    "home": "*",
-    "os": "*",
-    "osr": "*"
-  },
-  "system": {
-    "access": ["invoke"]
-  },
+
   "iframe": {
-    "sandbox": ["allow-scripts"],
+    "allowfullscreen": true,
+    "sandbox": ["allow-scripts", "allow-orientation-lock", "allow-downloads"],
     "canGoBack": true
   },
-  "sudo": false,
+
+  "system": {
+    "access": ["invoke", "alerts"]
+  },
+
+  "services": ["fs"],
+  
+  "service_config": {
+    "fs": {
+      "root": "read-write",
+      "os": "read-write",
+      "osr": "read-write",
+      "home": "read-write"
+    }
+  },
+
   "theme": "dark"
 }

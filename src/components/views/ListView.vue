@@ -7,8 +7,8 @@
       :class="{
         'bg-base-content/10': multiSelectMode && selectedPaths.includes(path)
       }"
-      v-longpress="() => onLongPress(path)"
-      @click="onClick(path)"
+      v-longpress="() => emit('long', path)"
+      @click="() => emit('select', path)"
     >
       <img
         v-if="path.directory"
@@ -28,7 +28,7 @@
       />
 
       <div class="flex-1 min-w-0 p-1">
-        <ScrollingText :text="path.name" />
+        <ScrollingText :text="stem ? path.stem : path.name" />
         <div
           v-if="path.directory"
           class="text-xs flex justify-between opacity-60"
@@ -59,12 +59,27 @@
   import FileIcon from "@/components/FileIcon.vue";
   import ScrollingText from "@/components/ui/ScrollingText.vue";
 
-  defineProps([
-    "visibleFiles",
-    "multiSelectMode",
-    "selectedPaths",
-    "onClick",
-    "onLongPress",
-    "getFilePath"
-  ]);
+  defineProps({
+    visibleFiles: {
+      type: Array,
+      required: true
+    },
+    selectedPaths: {
+      type: Array,
+      required: true
+    },
+    getFilePath: {
+      type: Function,
+      required: true
+    },
+    multiSelectMode: {
+      type: Boolean,
+      required: true
+    },
+    stem: {
+      type: Boolean,
+      required: true
+    }
+  });
+  const emit = defineEmits(["select", "long"]);
 </script>

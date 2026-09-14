@@ -6,12 +6,12 @@
     <div
       v-for="path in visibleFiles"
       :key="path.name + (path.directory ? '_dir' : '')"
-      @click="onClick(path)"
+      @click="() => emit('select', path)"
       class="flex flex-col items-center justify-center active:bg-base-content/10 p-1 rounded"
       :class="{
         'bg-base-content/10': multiSelectMode && selectedPaths.includes(path)
       }"
-      v-longpress="() => onLongPress(path)"
+      v-longpress="() => emit('long', path)"
     >
       <img
         v-if="path.directory"
@@ -29,7 +29,9 @@
         :suffix="path.suffix"
         :mime="path.mime_type"
       />
-      <h1 class="w-18 text-center truncate">{{ path.name }}</h1>
+      <h1 class="w-18 text-center truncate">
+        {{ stem ? path.stem : path.name }}
+      </h1>
     </div>
   </div>
 </template>
@@ -38,12 +40,27 @@
   import Thumbnail from "@/components/Thumbnail.vue";
   import FileIcon from "@/components/FileIcon.vue";
 
-  defineProps([
-    "visibleFiles",
-    "onClick",
-    "onLongPress",
-    "getFilePath",
-    "multiSelectMode",
-    "selectedPaths"
-  ]);
+  defineProps({
+    visibleFiles: {
+      type: Array,
+      required: true
+    },
+    selectedPaths: {
+      type: Array,
+      required: true
+    },
+    getFilePath: {
+      type: Function,
+      required: true
+    },
+    multiSelectMode: {
+      type: Boolean,
+      required: true
+    },
+    stem: {
+      type: Boolean,
+      required: true
+    }
+  });
+  const emit = defineEmits(["select", "long"]);
 </script>

@@ -1,7 +1,7 @@
 <template>
   <div class="h-full flex items-center justify-center p-6">
     <div class="w-full max-w-xl">
-      <audio ref="audio">
+      <audio ref="audio" autoplay>
         <source :src="src" />
       </audio>
     </div>

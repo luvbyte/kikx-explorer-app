@@ -2,8 +2,17 @@
   import { useSettings } from "@/stores/settings";
 
   const settings = useSettings();
-
-  defineProps(["currentProtocol", "listLoading"]);
+  
+  defineProps({
+    currentProtocol: {
+      type: String,
+      required: true
+    },
+    listLoading: {
+      type: Boolean,
+      required: true
+    }
+  })
   const emit = defineEmits(["close", "upload", "location", "create", "sort"]);
 </script>
 

@@ -12,7 +12,10 @@
   import { fs } from "@/api";
 
   const props = defineProps({
-    path: String
+    path: {
+      type: String,
+      required: true
+    }
   });
 
   const imageUrl = ref("");

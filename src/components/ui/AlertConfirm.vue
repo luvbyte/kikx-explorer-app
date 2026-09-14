@@ -39,8 +39,12 @@
 <script setup>
   import { ref } from "vue";
 
-  defineProps(["message"]);
-
+  defineProps({
+    message: {
+      type: String,
+      required: true
+    }
+  });
   const emit = defineEmits(["onResponse"]);
 
   const isShaking = ref(false);

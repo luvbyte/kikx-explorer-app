@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { toRaw } from "vue";
 
-import { FileSystemService, createApp } from "kikx-sdk";
+import { FileSystemService, createApp, Invoker } from "kikx-sdk";
 import { apiUrl, DEV } from "./config.js";
 import { useSettings } from "@/stores/settings";
 import { blobToText } from "./utils";
@@ -19,6 +19,8 @@ const appConfigSchema = z.object({
   openOnCreate: z.boolean(),
   highlightCode: z.boolean(),
   readOnly: z.boolean(),
+
+  hideExtension: z.boolean(),
 
   // theme: string
   theme: z.string(),
@@ -41,66 +43,16 @@ const appConfigSchema = z.object({
 
 // App instance
 const app = createApp();
+const fs = new FileSystemService(app);
+const invoker = new Invoker(app);
 
 // If DEV use local
 if (DEV) {
   app.config.configureUrls({
-    apiUrl,
-    appID: "3bd22615a5614359949012e484dab794"
+    apiUrl
+    // appID: "2c25d59d78af49c79608e052135c1bdd"
   });
 }
-
-// FS
-class FSApi extends FileSystemService {
-  constructor(app) {
-    super(app);
-  }
-  uploadFiles(files, dest) {
-    const formData = new FormData();
-
-    files.forEach(item => {
-      formData.append("files", item.file);
-    });
-
-    return this.request(
-      `upload?dest=${encodeURIComponent(dest)}`,
-      "POST",
-      formData,
-      false
-    );
-  }
-  copyFile(source, dest, override = false) {
-    return this.request("copy-file", "POST", {
-      source,
-      dest,
-      override
-    });
-  }
-  listFilesLimit(
-    directory,
-    { offset = 0, limit = 100, sort = "name", asc = true } = {}
-  ) {
-    const params = new URLSearchParams({
-      directory,
-      offset: String(offset),
-      limit: String(limit),
-      sort,
-      asc: String(asc)
-    });
-
-    const url = `list?${params.toString()}`;
-
-    return this.request(url);
-  }
-  createFile(filename) {
-    return this.request("create_file", "POST", {
-      filename
-    });
-  }
-}
-
-// FS instance
-const fs = new FSApi(app);
 
 // App config
 export const appConfig = {
@@ -153,4 +105,4 @@ export const appConfig = {
 
 // FS api
 
-export { app, fs };
+export { app, fs, invoker };

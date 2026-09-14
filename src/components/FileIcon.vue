@@ -5,5 +5,14 @@
 <script setup>
   import { getFileIcon } from "@/api/config";
 
-  defineProps(["suffix", "mime"]);
+  defineProps({
+    suffix: {
+      type: String,
+      required: true
+    },
+    mime: {
+      type: String,
+      required: true
+    }
+  });
 </script>

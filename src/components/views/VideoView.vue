@@ -33,8 +33,10 @@
         "duration",
         "mute",
         "volume",
+        "captions",
         "settings",
         "pip",
+        // "airplay",
         "fullscreen"
       ]
     });

@@ -2,7 +2,18 @@
   import { ref } from "vue";
   import { useSettings } from "@/stores/settings";
 
-  const props = defineProps(["selectBookmarkPath", "removeBookmark"]);
+  import ToggleButton from "@/components/ui/ToggleButton.vue";
+
+  const props = defineProps({
+    selectBookmarkPath: {
+      type: Function,
+      required: true
+    },
+    removeBookmark: {
+      type: Function,
+      required: true
+    }
+  });
   const emit = defineEmits(["close"]);
 
   const settings = useSettings();
@@ -35,52 +46,40 @@
         <div class="flex flex-col gap-2">
           <div class="divider m-0">Files</div>
           <!-- Show hidden files -->
-          <label class="flex justify-between items-center">
-            Hidden Files
-            <input
-              v-model="settings.state.showHiddenFiles"
-              type="checkbox"
-              class="toggle"
-            />
-          </label>
+          <ToggleButton
+            label="Hidden Files"
+            v-model="settings.state.showHiddenFiles"
+          />
+
           <!-- Highlight Code -->
-          <label class="flex justify-between items-center">
-            Highlight Code
-            <input
-              v-model="settings.state.highlightCode"
-              type="checkbox"
-              class="toggle"
-            />
-          </label>
+          <ToggleButton
+            label="Highlight Code"
+            v-model="settings.state.highlightCode"
+          />
+
           <!-- Default Readonly -->
-          <label class="flex justify-between items-center">
-            Readonly File
-            <input
-              v-model="settings.state.readOnly"
-              type="checkbox"
-              class="toggle"
-            />
-          </label>
+          <ToggleButton
+            label="Readonly File"
+            v-model="settings.state.readOnly"
+          />
+
+          <!-- Extension -->
+          <ToggleButton
+            label="Hide Extension"
+            v-model="settings.state.hideExtension"
+          />
 
           <div class="divider m-0">Misc</div>
           <!-- Show load circle -->
-          <label class="flex justify-between items-center">
-            Open on create
-            <input
-              v-model="settings.state.openOnCreate"
-              type="checkbox"
-              class="toggle"
-            />
-          </label>
+          <ToggleButton
+            label="Open on create"
+            v-model="settings.state.openOnCreate"
+          />
           <!-- Show load circle -->
-          <label class="flex justify-between items-center">
-            Loading Circle
-            <input
-              v-model="settings.state.showLoadCircle"
-              type="checkbox"
-              class="toggle"
-            />
-          </label>
+          <ToggleButton
+            label="Loading Circle"
+            v-model="settings.state.showLoadCircle"
+          />
         </div>
         <!-- Bookmarks -->
         <h1

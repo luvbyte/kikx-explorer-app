@@ -2,13 +2,25 @@
   import { useSettings } from "@/stores/settings";
 
   const settings = useSettings();
-
-  defineProps([
-    "listLoading",
-    "multiSelectMode",
-    "showRightMenu",
-    "isCurrentPathBookmarked"
-  ]);
+  
+  defineProps({
+    listLoading: {
+      type: Boolean,
+      required: true
+    },
+    multiSelectMode: {
+      type: Boolean,
+      required: true
+    },
+    showRightMenu: {
+      type: Boolean,
+      required: true
+    },
+    isCurrentPathBookmarked: {
+      type: Boolean,
+      required: true
+    }
+  })
   const emit = defineEmits([
     "goUp",
     "goBack",

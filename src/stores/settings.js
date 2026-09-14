@@ -11,9 +11,10 @@ export const useSettings = defineStore("settings", () => {
     // Show loading animation
     showLoadCircle: false,
     // Open file / folder on create
-    openOnCreate: true,
+    openOnCreate: false,
     highlightCode: true,
     readOnly: false,
+    hideExtension: false,
     // string
     theme: defaultTheme,
     // type: [name, size, modified]

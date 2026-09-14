@@ -206,14 +206,17 @@
   import AlertConfirm from "@/components/ui/AlertConfirm.vue";
   import Loading from "@/components/Loading.vue";
 
-  import { fs } from "@/api";
+  import { app, fs } from "@/api";
   import { useErrorStore } from "@/stores/error";
 
   const errors = useErrorStore();
 
   const showConfirm = ref(false);
-
-  const props = defineProps(["currentPath"]);
+  
+  const props = defineProps({
+    currentPath: String,
+    required: true
+  })
   const emit = defineEmits(["close", "update"]);
 
   const files = ref([]);
@@ -271,15 +274,22 @@
     // Upload files
     uploading.value = true;
 
-    const res = await fs.uploadFiles(files.value, props.currentPath);
+    const { data, error } = await fs.uploadFiles(
+      files.value.map(item => item.file),
+      props.currentPath
+    );
     removeAll();
 
     uploading.value = false;
 
-    if (res.error) {
-      errors.raiseError(res.error.detail || "Error uploading files", "error");
+    if (error) {
+      app.system.alert("Error uploading files", { type: "error" });
+      errors.raiseError(error.detail || "Error uploading files", "error");
       return;
     }
+
+    app.system.alert("Files uploaded succesfully");
+
     emit("update");
     emit("close");
   }

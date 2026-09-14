@@ -1,12 +1,25 @@
 <script setup>
   import { ref, onMounted } from "vue";
 
-  const props = defineProps(["title", "default", "autoSelect"]);
+  const props = defineProps({
+    title: {
+      type: String,
+      required: true
+    },
+    default: {
+      type: String,
+      required: false
+    },
+    autoSelect: {
+      type: Boolean,
+      required: false
+    }
+  });
+  const emit = defineEmits(["onResponse"]);
 
   const inputRef = ref(null);
   const name = ref(props.default || "Untitled");
 
-  const emit = defineEmits(["onResponse"]);
 
   onMounted(() => {
     inputRef.value?.focus();
