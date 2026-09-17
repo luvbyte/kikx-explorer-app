@@ -490,7 +490,12 @@
   // ------------------------- Multi Path
 
   // Toggle multi select
-  function toggleMultiSelectMode() {
+  async function toggleMultiSelectMode() {
+    if (!multiSelectMode.value) {
+      offset.value = 0;
+      limit.value = -1;
+      await reloadDirectory();
+    }
     multiSelectMode.value = !multiSelectMode.value;
     selectedPaths.value.length = 0;
   }
@@ -714,6 +719,8 @@
   let lastBackPress = 0;
 
   function appNavBack() {
+    if (errors.errorStack.length > 0 || createPath.value) return;
+
     const now = Date.now();
     const isRoot = !currentPath.value.replace(/^\/|\/$/g, "");
 
@@ -924,7 +931,9 @@
 
     <!-- Loading effects -->
     <Loading v-if="settings.state.showLoadCircle && listLoading" />
+   <!--
     <div v-else-if="listLoading" class="flex-1"></div>
+   -->
 
     <!-- Panel -->
     <div

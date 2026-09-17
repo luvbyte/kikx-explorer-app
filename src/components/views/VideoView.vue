@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, onBeforeUnmount } from "vue";
+  import { onMounted, onBeforeUnmount, ref } from "vue";
   import Plyr from "plyr";
   import "plyr/dist/plyr.css";
 
@@ -20,8 +20,36 @@
 
   const video = ref(null);
   let player = null;
+  let isLandscape = false;
+
+  const handleMetadata = () => {
+    isLandscape = video.value.videoWidth > video.value.videoHeight;
+  };
+
+  const enterFullscreen = async () => {
+    if (!isLandscape) return;
+
+    try {
+      await screen.orientation.lock("landscape");
+    } catch (error) {
+      // Orientation locking is not supported by this browser
+      console.log("Orientation lock not supported:", error);
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      if (screen.orientation?.unlock) {
+        screen.orientation.unlock();
+      }
+    } catch (error) {
+      console.log("Could not unlock orientation:", error);
+    }
+  };
 
   onMounted(() => {
+    video.value.addEventListener("loadedmetadata", handleMetadata);
+
     player = new Plyr(video.value, {
       autoplay: true,
       muted: false,
@@ -36,15 +64,23 @@
         "captions",
         "settings",
         "pip",
-        // "airplay",
         "fullscreen"
       ]
     });
+
+    player.on("enterfullscreen", enterFullscreen);
+    player.on("exitfullscreen", exitFullscreen);
 
     player.play().catch(() => {});
   });
 
   onBeforeUnmount(() => {
+    video.value?.removeEventListener("loadedmetadata", handleMetadata);
+
+    try {
+      screen.orientation?.unlock();
+    } catch {}
+
     player?.destroy();
   });
 </script>

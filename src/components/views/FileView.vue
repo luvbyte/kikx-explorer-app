@@ -204,8 +204,8 @@
       left:
         thumbnail.offsetLeft -
         thumbnailsRef.value.clientWidth / 2 +
-        thumbnail.clientWidth / 2,
-      behavior: "smooth"
+        thumbnail.clientWidth / 2
+      // behavior: "smooth"
     });
   }
 

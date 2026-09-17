@@ -49,8 +49,8 @@ const invoker = new Invoker(app);
 // If DEV use local
 if (DEV) {
   app.config.configureUrls({
-    apiUrl
-    // appID: "2c25d59d78af49c79608e052135c1bdd"
+    apiUrl,
+    appID: "0528bfde19f84b2fa1914293dfb52ef4"
   });
 }
 
