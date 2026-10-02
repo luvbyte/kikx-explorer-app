@@ -34,6 +34,10 @@
       type: Function,
       required: true
     },
+    actionFile: {
+      type: Function,
+      required: true
+    },
     setWallpaper: {
       type: Function,
       required: true
@@ -58,6 +62,11 @@
 
   function downloadFile(path) {
     props.downloadFile(path);
+    emit("close");
+  }
+
+  function actionFile(path) {
+    props.actionFile(path);
     emit("close");
   }
 
@@ -95,45 +104,102 @@
 
 <template>
   <div
-    @click.self="emit('close')"
-    class="fixed p-8 inset-0 fscreen z-60 bg-black/60 text-white flex flex-col items-center gap-4"
+    @click="emit('close')"
+    class="fixed p-4 inset-0 fscreen z-60 bg-black/60 backdrop-blur-[1px] text-white flex flex-col gap-4"
   >
-    <!-- Close Button -->
-    <div class="rounded bg-base-100/20 p-4 border border-base-content/20">
-      <img
-        v-if="path.directory"
-        class="w-22 h-22 aspect-square"
-        src="/icons/folder-icon.svg"
-      />
-      <Thumbnail
-        v-else-if="path.image_type"
-        class="w-22 h-22"
-        :path="filePath"
-      />
-      <FileIcon
-        v-else
-        :suffix="path.suffix"
-        :mime="path.mime_type"
-        class="w-22 h-22 shrink-0"
-      />
+    <!-- Header -->
+    <div
+      @click.stop
+      class="mt-6 flex items-center gap-3 rounded border border-base-content/20 bg-base-100/20 p-4"
+    >
+      <!-- Icon -->
+      <div class="w-22 h-22 shrink-0">
+        <img
+          v-if="path.directory"
+          src="/icons/folder-icon.svg"
+          alt="Folder"
+          class="w-full h-full aspect-square"
+        />
+
+        <Thumbnail
+          v-else-if="path.image_type"
+          :path="filePath"
+          class="w-full h-full"
+        />
+
+        <FileIcon
+          v-else
+          :name="path.name"
+          :suffix="path.suffix"
+          :mime="path.mime_type"
+          class="w-full h-full"
+        />
+      </div>
+
+      <!-- Details -->
+      <div class="min-w-0 flex-1 flex flex-col gap-2">
+        <ScrollingText :text="path.name" class="text-center text-lg" />
+
+        <!-- Path -->
+        <div
+          class="min-w-0 flex-1 overflow-x-auto rounded border border-base-content/10 bg-base-100/20 p-2 scrollbar-hide"
+          @click="showKikxPath = !showKikxPath"
+        >
+          <code class="block whitespace-nowrap text-xs">
+            {{ showKikxPath ? path.kikxpath : path.absolute_path }}
+          </code>
+        </div>
+      </div>
     </div>
 
-    <ScrollingText :text="path.name" class="text-center text-lg" />
-
-    <!-- Abs path -->
-
+    <!-- Body -->
     <div
-      class="rounded border border-base-content/10 bg-base-100/20 p-2 max-w-[95%] overflow-x-auto scrollbar-hide"
-      @click="showKikxPath = !showKikxPath"
+      class="mt-8 flex-1 flex flex-col gap-6 items-center justify-start overflow-hidden"
     >
-      <code class="whitespace-nowrap text-xs">
-        {{ showKikxPath ? path.kikxpath : path.absolute_path }}
-      </code>
-    </div>
+      <!-- Info -->
+      <div
+        class="text-sm max-w-md w-full rounded border border-base-content/20 bg-base-100/20 p-4 flex flex-col gap-3 items-stretch"
+      >
+        <div class="flex justify-between">
+          <span class="font-semibold">Type</span>
+          <span>{{ path.directory ? "Directory" : "File" }}</span>
+        </div>
 
-    <div
-      class="flex-1 flex flex-col gap-3 items-center justify-center overflow-hidden"
-    >
+        <div class="flex justify-between">
+          <span class="font-semibold">Extension</span>
+          <span>{{ path.suffix || "-" }}</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="font-semibold">Size</span>
+          <span>{{ formatBytes(path.size_bytes) }}</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="font-semibold">Permissions</span>
+          <span>{{ path.permissions }}</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="font-semibold">Owner</span>
+          <span>{{ path.owner || "-" }}</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="font-semibold">Modified</span>
+          <span>{{ formatDate(path.modified) }}</span>
+        </div>
+
+        <div v-if="path.is_symlink" class="pt-2">
+          <span
+            class="inline-block rounded bg-warning/10 px-2 py-1 text-warning text-sm"
+          >
+            Symlink
+          </span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
       <div
         class="border border-base-content/20 bg-base-100/20 max-w-md py-4 rounded p-2 w-full flex flex-wrap gap-2 items-center justify-center overflow-y-auto"
       >
@@ -189,7 +255,7 @@
           Wallpaper
         </button>
         <button
-          @click="showRenameDialouge = true"
+          @click.stop="showRenameDialouge = true"
           class="btn btn-sm btn-info min-w-32"
         >
           <svg
@@ -234,7 +300,7 @@
           Share
         </button>
         <button
-          @click="confirmDeleteAlert = true"
+          @click.stop="confirmDeleteAlert = true"
           class="btn btn-sm btn-error min-w-32"
         >
           <svg
@@ -252,55 +318,33 @@
 
           Delete
         </button>
-      </div>
-      <!-- Info -->
-      <div
-        class="max-w-md w-full rounded border border-base-content/20 bg-base-100/20 p-4 flex flex-col gap-3 items-stretch"
-        @click="emit('close')"
-      >
-        <div class="flex justify-between">
-          <span class="font-semibold">Type</span>
-          <span>{{ path.directory ? "Directory" : "File" }}</span>
-        </div>
-
-        <div class="flex justify-between">
-          <span class="font-semibold">Extension</span>
-          <span>{{ path.suffix || "-" }}</span>
-        </div>
-
-        <div class="flex justify-between">
-          <span class="font-semibold">Size</span>
-          <span>{{ formatBytes(path.size_bytes) }}</span>
-        </div>
-
-        <div class="flex justify-between">
-          <span class="font-semibold">Permissions</span>
-          <span>{{ path.permissions }}</span>
-        </div>
-
-        <div class="flex justify-between">
-          <span class="font-semibold">Owner</span>
-          <span>{{ path.owner || "-" }}</span>
-        </div>
-
-        <div class="flex justify-between">
-          <span class="font-semibold">Modified</span>
-          <span>{{ formatDate(path.modified) }}</span>
-        </div>
-
-        <div v-if="path.is_symlink" class="pt-2">
-          <span
-            class="inline-block rounded bg-warning/10 px-2 py-1 text-warning text-sm"
+        <button
+          @click="actionFile(path)"
+          class="btn btn-sm btn-warning min-w-32"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 32 32"
           >
-            Symlink
-          </span>
-        </div>
+            <path d="M0 0h32v32H0z" fill="none" />
+            <path
+              fill="currentColor"
+              d="M7 7h3v3h12V7h3v11h2V7a2.006 2.006 0 0 0-2-2h-3V4a2.006 2.006 0 0 0-2-2h-8a2.006 2.006 0 0 0-2 2v1H7a2.006 2.006 0 0 0-2 2v21a2.006 2.006 0 0 0 2 2h9v-2H7zm5-3h8v4h-8zm18 20h-8.172l2.586-2.586L23 20l-5 5l5 5l1.414-1.414L21.828 26H30zM12 13h-2v2h2zm10 0h-8v2h8zm-10 5h-2v2h2zm-2 7h2v-2h-2zm4-5h4v-2h-4z"
+            />
+          </svg>
+
+          Action
+        </button>
       </div>
     </div>
+
     <!-- alert -->
     <AlertConfirm
       v-if="confirmDeleteAlert"
       class="fade-in"
+      @click.stop
       :message="`Do you want to delete '${path.name}'?`"
       @onResponse="onDeleteResponse"
     />
@@ -308,6 +352,7 @@
     <AlertInput
       v-if="showRenameDialouge"
       class="fade-in"
+      @click.stop
       :title="`Rename file`"
       :default="path.name"
       @onResponse="renameFile"

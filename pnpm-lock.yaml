@@ -15,8 +15,8 @@ importers:
         specifier: ^11.11.1
         version: 11.11.1
       kikx-sdk:
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.2.3
+        version: 1.2.3
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(vue@3.5.39)
@@ -670,8 +670,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  kikx-sdk@1.2.0:
-    resolution: {integrity: sha512-6Rvb6aaWS05T+08yc8XLLIN4IJolEYIOh9FQG255lSk1KrPM58t1ZjViOhxn7vXSNLruC+Z96pmz45cAi3HXGw==}
+  kikx-sdk@1.2.3:
+    resolution: {integrity: sha512-zXvp7n2CBv2aaI7vUoAAJh5GyRKOzcAbfJCDBlP8dvgZjqNab+jQFz5fts5+7oq35wyzBs00Xsqkc2d5DQ+nTg==}
 
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
@@ -1587,7 +1587,7 @@ snapshots:
 
   json5@2.2.3: {}
 
-  kikx-sdk@1.2.0: {}
+  kikx-sdk@1.2.3: {}
 
   kolorist@1.8.0: {}
 

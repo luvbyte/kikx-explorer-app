@@ -22,11 +22,11 @@
       type: Function,
       required: true
     },
-    updateCopyFilesList: {
+    updateActionFilesList: {
       type: Function,
       required: true
     },
-    copyFilesList: {
+    actionFilesList: {
       type: Array,
       required: true
     }
@@ -78,7 +78,7 @@
       <button
         class="disabled p-1 rounded active:enabled:bg-primary active:enabled:text-primary-content disabled:text-base-content/40 transition-colors"
         :disabled="selectedPaths.length <= 0"
-        @click="updateCopyFilesList"
+        @click="updateActionFilesList"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -95,7 +95,7 @@
       </button>
       <button
         class="p-1 rounded active:enabled:bg-primary active:enabled:text-primary-content disabled:text-base-content/40 transition-colors"
-        :disabled="copyFilesList.length <= 0"
+        :disabled="actionFilesList.length <= 0"
         @click="emit('copy')"
       >
         <svg
@@ -113,7 +113,7 @@
       </button>
       <button
         class="p-1 rounded active:enabled:bg-primary active:enabled:text-primary-content disabled:text-base-content/40 transition-colors"
-        :disabled="copyFilesList.length <= 0"
+        :disabled="actionFilesList.length <= 0"
         @click="emit('move')"
       >
         <svg

@@ -12,8 +12,7 @@
   import { app, fs, appConfig, invoker } from "@/api";
   import { imageExtensions } from "@/api/config";
 
-  import GridView from "@/components/views/GridView.vue";
-  import ListView from "@/components/views/ListView.vue";
+  import FilesView from "@/components/views/FilesView.vue";
   import FileView from "@/components/views/FileView.vue";
   import FileContextMenu from "@/components/FileContextMenu.vue";
   import RightSidebar from "@/components/RightSidebar.vue";
@@ -25,6 +24,9 @@
   import Header from "@/components/Header.vue";
   import Menubox from "@/components/Menubox.vue";
   import PasteActions from "@/components/PasteActions.vue";
+
+  import DiskUsageInfo from "@/components/DiskUsageInfo.vue";
+  import FilesListOptionsPanel from "@/components/FilesListOptionsPanel.vue";
 
   import Alert from "@/components/ui/Alert.vue";
   import AlertInput from "@/components/ui/AlertInput.vue";
@@ -46,17 +48,29 @@
   // home / os / root / osr
   const currentProtocol = ref("home");
   const currentPath = ref("");
+
   // Path
   const pathContainer = ref(null);
   const pathSearchInput = ref("");
 
+  // Fetch options
+  const DEFAULT_LIMIT = 50;
+
   const offset = ref(0);
-  const limit = ref(50);
   const hasMore = ref(false);
+
+  const filterOptions = ref({
+    search: "", // seach file name
+    extensions: "", // ex: .png,.jpg
+    filter: "" // files, directories, images
+  });
+
+  const showListOptions = ref(false);
+
   // CurrentPath files list
   const filesList = ref([]);
-  // Copy files list
-  const copyFilesList = ref([]);
+  // Action files list
+  const actionFilesList = ref([]);
 
   // Multi select
   const multiSelectMode = ref(false);
@@ -66,6 +80,7 @@
   const showUploader = ref(false);
   const showRSidebar = ref(false);
   const showLSidebar = ref(false);
+
   // Menu, Path search
   const showRightMenu = ref(false);
   const showPathSearch = ref(false);
@@ -98,6 +113,11 @@
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 800) {
       loadMore();
     }
+  }
+
+  function resetPagination() {
+    offset.value = 0;
+    hasMore.value = false;
   }
 
   // ------------------------- Computed
@@ -166,16 +186,45 @@
   }
 
   // Update current path list
+  async function fetchFiles(offsetValue = 0) {
+    return await fs.listFiles(getFinalPath(), {
+      offset: offsetValue,
+      limit: multiSelectMode.value ? -1 : DEFAULT_LIMIT,
+
+      sort: settings.state.sort.type,
+      asc: settings.state.sort.asc,
+
+      filter: filterOptions.value.filter || "all",
+      extensions: filterOptions.value.extensions || "",
+      search: filterOptions.value.search || "",
+
+      thumbnails: true
+    });
+  }
+
+  function updateFilterOptions(options) {
+    filterOptions.value = {
+      ...filterOptions.value,
+      ...options
+    };
+
+    reloadDirectory();
+  }
+
+  function resetFilterOptions() {
+    filterOptions.value = {
+      search: "",
+      extensions: "",
+      filter: ""
+    };
+
+    reloadDirectory();
+  }
+
   async function updateCurrentPathList() {
     listLoading.value = true;
 
-    const { data, error } = await fs.listFiles(getFinalPath(), {
-      offset: offset.value,
-      limit: limit.value,
-      sort: settings.state.sort.type,
-      asc: settings.state.sort.asc,
-      thumbnails: true
-    });
+    const { data, error } = await fetchFiles(0);
 
     listLoading.value = false;
 
@@ -184,11 +233,8 @@
       return;
     }
 
-    filesList.value = data.files.map(item => ({
-      ...item,
-      kikxpath: getFilePath(item.name)
-    }));
-
+    offset.value = 0;
+    filesList.value = data.files;
     hasMore.value = data.has_more;
   }
 
@@ -203,19 +249,15 @@
   }
 
   async function loadMore() {
-    if (loadingMore.value || !hasMore.value) return;
+    if (loadingMore.value || !hasMore.value || multiSelectMode.value) {
+      return;
+    }
 
     loadingMore.value = true;
 
-    offset.value += limit.value;
+    const nextOffset = offset.value + DEFAULT_LIMIT;
 
-    const { data, error } = await fs.listFiles(getFinalPath(), {
-      offset: offset.value,
-      limit: limit.value,
-      sort: settings.state.sort.type,
-      asc: settings.state.sort.asc,
-      thumbnails: true
-    });
+    const { data, error } = await fetchFiles(nextOffset);
 
     loadingMore.value = false;
 
@@ -224,13 +266,9 @@
       return;
     }
 
-    filesList.value.push(
-      ...data.files.map(item => ({
-        ...item,
-        kikxpath: getFilePath(item.name)
-      }))
-    );
+    offset.value = nextOffset;
 
+    filesList.value.push(...data.files);
     hasMore.value = data.has_more;
   }
 
@@ -487,17 +525,132 @@
     });
   }
 
+  // ------------------------- Action Files
+
+  function addActionFiles(files) {
+    const incoming = Array.isArray(files) ? files : [files];
+
+    for (const file of incoming) {
+      if (!file?.kikxpath) continue;
+
+      const exists = actionFilesList.value.some(
+        item => item.kikxpath === file.kikxpath
+      );
+
+      if (!exists) {
+        actionFilesList.value.push(file);
+      }
+    }
+  }
+
+  function removeActionFile(file) {
+    const index = actionFilesList.value.findIndex(
+      item => item.kikxpath === file.kikxpath
+    );
+
+    if (index !== -1) {
+      actionFilesList.value.splice(index, 1);
+    }
+  }
+
+  function clearActionFiles() {
+    actionFilesList.value = [];
+  }
+
+  function actionFile(file) {
+    addActionFiles(file);
+  }
+
+  // Copy selected files to currentPath
+  async function copyFiles() {
+    if (!actionFilesList.value.length) {
+      return;
+    }
+
+    const paths = actionFilesList.value
+      .map(item => item?.kikxpath)
+      .filter(Boolean);
+
+    if (!paths.length) {
+      clearActionFiles();
+      return;
+    }
+
+    const dest = getFinalPath();
+
+    // Close FAB immediately
+    clearActionFiles();
+
+    const { error } = await fs.copy(paths, dest);
+
+    if (error) {
+      errors.raiseError(error.detail || "Error copying files", "error");
+      return;
+    }
+
+    await reloadDirectory();
+  }
+
+  // Move selected files
+  async function moveFiles() {
+    if (!actionFilesList.value.length) {
+      return;
+    }
+
+    const paths = actionFilesList.value
+      .map(item => item?.kikxpath)
+      .filter(Boolean);
+
+    if (!paths.length) {
+      clearActionFiles();
+      return;
+    }
+
+    const dest = getFinalPath();
+
+    // Don't move files into their own current directory.
+    const sameDirectory = paths.some(path => {
+      const source = path.substring(0, path.lastIndexOf("/"));
+
+      return source === dest.replace(/\/$/, "");
+    });
+
+    if (sameDirectory) {
+      errors.raiseError("Files are already in this directory", "error");
+      return;
+    }
+
+    // Close FAB immediately
+    clearActionFiles();
+
+    const copy = await fs.copy(paths, dest);
+
+    if (copy.error) {
+      errors.raiseError(copy.error.detail || "Error moving files", "error");
+      return;
+    }
+
+    const del = await fs.deleteList(paths);
+
+    if (del.error) {
+      errors.raiseError(del.error.detail || "Error moving files", "error");
+      return;
+    }
+
+    await reloadDirectory();
+  }
+
   // ------------------------- Multi Path
 
   // Toggle multi select
   async function toggleMultiSelectMode() {
-    if (!multiSelectMode.value) {
-      offset.value = 0;
-      limit.value = -1;
-      await reloadDirectory();
-    }
     multiSelectMode.value = !multiSelectMode.value;
-    selectedPaths.value.length = 0;
+
+    offset.value = 0;
+    hasMore.value = false;
+    selectedPaths.value = [];
+
+    await reloadDirectory();
   }
 
   // Toggle select all
@@ -512,62 +665,37 @@
 
   // Delete selected files
   async function deleteSelectedFiles() {
-    const paths = selectedPaths.value.map(path => getFilePath(path.name));
-    selectedPaths.value.length = 0;
+    if (!selectedPaths.value.length) {
+      return;
+    }
 
-    // Paths
+    const paths = selectedPaths.value
+      .map(path => getFilePath(path.name))
+      .filter(Boolean);
+
+    multiSelectMode.value = false;
+    selectedPaths.value = [];
+
     const { error } = await fs.deleteList(paths);
 
     if (error) {
       errors.raiseError(error.detail || "Error deleting files", "error");
-    } else {
-      await reloadDirectory();
-    }
-  }
-
-  // Copy selected files to currentPath
-  async function copyFiles() {
-    const paths = copyFilesList.value.map(item => item.kikxpath);
-    const dest = getFinalPath();
-
-    copyFilesList.value.length = 0;
-
-    const { error } = await fs.copy(paths, dest);
-    if (error) {
-      errors.raiseError(error.detail || "Error copying files", "error");
-    } else {
-      await reloadDirectory();
-    }
-  }
-
-  // Move selected files (*)
-  async function moveFiles() {
-    const paths = copyFilesList.value.map(item => item.kikxpath);
-    const dest = getFinalPath();
-
-    copyFilesList.value.length = 0;
-
-    let copy = await fs.copy(paths, dest);
-    if (copy.error) {
-      errors.raiseError(copy.error.detail || "Error moving files", "error");
       return;
     }
 
-    let del = await fs.deleteList(paths);
-    if (del.error) {
-      errors.raiseError(del.error.detail || "Error moving files", "error");
-      return;
-    }
+    resetPagination();
 
     await reloadDirectory();
   }
 
-  // Copy selectedPaths to copyFilesList
-  function updateCopyFilesList() {
-    copyFilesList.value = selectedPaths.value.slice();
+  // Copy selectedPaths to actionFilesList
+  async function updateActionFilesList() {
+    addActionFiles(selectedPaths.value);
 
     selectedPaths.value = [];
     multiSelectMode.value = false;
+
+    resetPagination();
   }
 
   // ------------------------- Click events
@@ -904,6 +1032,7 @@
       :listLoading="listLoading"
       :multiSelectMode="multiSelectMode"
       :showRightMenu="showRightMenu"
+      :filterOptions="filterOptions"
       :isCurrentPathBookmarked="isCurrentPathBookmarked"
       @goUp="goUp"
       @goBack="goBack"
@@ -912,7 +1041,19 @@
       @multi="toggleMultiSelectMode"
       @menu="() => (showRightMenu = true)"
       @bookmark="toggleBookmarkCurrentPath"
+      @listOptions="showListOptions = !showListOptions"
     />
+
+    <!-- Files list filter Options -->
+    <Transition name="fade-scale">
+      <FilesListOptionsPanel
+        v-if="showListOptions"
+        :options="filterOptions"
+        @apply="updateFilterOptions"
+        @reset="resetFilterOptions"
+        @close="showListOptions = false"
+      />
+    </Transition>
 
     <!-- Selected Paths Info -->
     <Transition name="fade">
@@ -922,8 +1063,8 @@
         :visibleFiles="visibleFiles"
         :toggleSelectAll="toggleSelectAll"
         :deleteSelectedFiles="deleteSelectedFiles"
-        :updateCopyFilesList="updateCopyFilesList"
-        :copyFilesList="copyFilesList"
+        :updateActionFilesList="updateActionFilesList"
+        :actionFilesList="actionFilesList"
         @copy="copyFiles"
         @move="moveFiles"
       />
@@ -931,9 +1072,6 @@
 
     <!-- Loading effects -->
     <Loading v-if="settings.state.showLoadCircle && listLoading" />
-   <!--
-    <div v-else-if="listLoading" class="flex-1"></div>
-   -->
 
     <!-- Panel -->
     <div
@@ -942,29 +1080,22 @@
       @scroll="onScroll"
       class="flex-1 overflow-y-auto select-none"
     >
-      <!-- Grid Icons -->
-      <GridView
-        v-if="settings.state.iconsView === 'grid'"
+      <FilesView
         :visibleFiles="visibleFiles"
         :multiSelectMode="multiSelectMode"
         :getFilePath="getFilePath"
         :selectedPaths="selectedPaths"
-        :stem="settings.state.hideExtension"
-        @select="onPathClick"
-        @long="onPathLongPress"
-      />
-      <!-- List Icons -->
-      <ListView
-        v-else-if="settings.state.iconsView === 'list'"
-        :visibleFiles="visibleFiles"
-        :multiSelectMode="multiSelectMode"
-        :selectedPaths="selectedPaths"
-        :stem="settings.state.hideExtension"
-        :getFilePath="getFilePath"
+        :hideExtension="settings.state.hideExtension"
+        :view="settings.state.iconsView"
         @select="onPathClick"
         @long="onPathLongPress"
       />
     </div>
+
+    <!-- Disk Usage Info Panel -->
+    <Transition name="slide-up">
+      <DiskUsageInfo v-show="settings.state.showDiskUsage" />
+    </Transition>
 
     <!-- Left SideBar -->
     <Transition name="slide-right">
@@ -998,8 +1129,8 @@
     <!-- PasteActions Fab -->
     <Transition name="fade-scale">
       <PasteActions
-        v-if="copyFilesList.length > 0"
-        @reset="copyFilesList.length = 0"
+        v-if="actionFilesList.length > 0"
+        @reset="clearActionFiles"
         @copy="copyFiles"
         @move="moveFiles"
       />
@@ -1032,6 +1163,7 @@
         :downloadFile="downloadFile"
         :renameFile="renameFile"
         :shareFile="shareFile"
+        :actionFile="actionFile"
         :setWallpaper="setWallpaper"
         @close="fileContextMenu = null"
       />

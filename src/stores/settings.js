@@ -15,6 +15,7 @@ export const useSettings = defineStore("settings", () => {
     highlightCode: true,
     readOnly: false,
     hideExtension: false,
+    showDiskUsage: true,
     // string
     theme: defaultTheme,
     // type: [name, size, modified]

@@ -1,14 +1,18 @@
 <template>
   <div class="overflow-hidden aspect-square rounded object-cover">
-    <Loading v-if="!imageUrl" />
-    <img v-else :src="imageUrl" class="fscreen object-cover" />
+    <img
+      v-if="imageUrl"
+      :src="imageUrl"
+      class="fscreen object-cover transition-opacity duration-300 ease-out"
+      :class="loading ? 'opacity-0' : 'opacity-100'"
+      @load="loading = false"
+      @error="loading = false"
+    />
   </div>
 </template>
 
 <script setup>
-  import Loading from "@/components/Loading.vue";
   import { ref, onBeforeMount, onUnmounted } from "vue";
-
   import { fs } from "@/api";
 
   const props = defineProps({
@@ -19,15 +23,27 @@
   });
 
   const imageUrl = ref("");
+  const loading = ref(true);
 
   onBeforeMount(async () => {
-    const { error, data } = await fs.thumbnail(props.path);
+    try {
+      const { error, data } = await fs.thumbnail(props.path);
 
-    if (error) {
+      if (error) {
+        console.error(error);
+        loading.value = false;
+        return;
+      }
+
+      const blob = data instanceof Blob
+        ? data
+        : new Blob([data]);
+
+      imageUrl.value = URL.createObjectURL(blob);
+    } catch (error) {
       console.error(error);
+      loading.value = false;
     }
-
-    imageUrl.value = URL.createObjectURL(data);
   });
 
   onUnmounted(() => {

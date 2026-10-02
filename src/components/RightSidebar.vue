@@ -70,17 +70,25 @@
           />
 
           <div class="divider m-0">Misc</div>
-          <!-- Show load circle -->
+
+          <!-- Open on create -->
           <ToggleButton
             label="Open on create"
             v-model="settings.state.openOnCreate"
           />
+
           <!-- Show load circle -->
           <ToggleButton
             label="Loading Circle"
             v-model="settings.state.showLoadCircle"
           />
+          <!-- Show disk usage -->
+          <ToggleButton
+            label="Show Disk Usage"
+            v-model="settings.state.showDiskUsage"
+          />
         </div>
+
         <!-- Bookmarks -->
         <h1
           class="p-2 text-center bg-primary/10 text-primary border border-primary-content/20 rounded-lg"

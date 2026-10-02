@@ -2,7 +2,7 @@
   import { useSettings } from "@/stores/settings";
 
   const settings = useSettings();
-  
+
   defineProps({
     listLoading: {
       type: Boolean,
@@ -19,8 +19,12 @@
     isCurrentPathBookmarked: {
       type: Boolean,
       required: true
+    },
+    filterOptions: {
+      type: Object,
+      required: true
     }
-  })
+  });
   const emit = defineEmits([
     "goUp",
     "goBack",
@@ -28,7 +32,8 @@
     "update",
     "multi",
     "menu",
-    "bookmark"
+    "bookmark",
+    "listOptions"
   ]);
 </script>
 
@@ -130,8 +135,41 @@
         </svg>
       </button>
     </div>
-    <!-- right buttons -->
+
+    <!-- Right buttons -->
     <div class="flex items-center bg-primary/10 text-primary-content">
+      <button
+        @click="emit('listOptions')"
+        class="p-1 transition-colors"
+        :class="{
+          'bg-error text-error-content':
+            filterOptions.search ||
+            filterOptions.extensions ||
+            filterOptions.filter
+        }"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+        >
+          <path d="M0 0h24v24H0z" fill="none" />
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          >
+            <ellipse cx="12" cy="5" rx="9" ry="2" />
+            <path
+              d="M3 5c0 2.23 3.871 6.674 5.856 8.805A4.2 4.2 0 0 1 10 16.657V19a2 2 0 0 0 2 2v0a2 2 0 0 0 2-2v-2.343c0-1.061.421-2.075 1.144-2.852C17.13 11.674 21 7.231 21 5"
+            />
+          </g>
+        </svg>
+      </button>
+
       <button
         @click="emit('multi')"
         class="p-1 transition-colors"

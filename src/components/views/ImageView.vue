@@ -14,7 +14,8 @@
       :src="src"
       :alt="alt"
       :class="[
-        'max-w-full max-h-full object-contain pointer-events-none',
+        'max-w-full max-h-full object-contain pointer-events-none transition-opacity duration-300 ease-out',
+        !imageLoaded ? 'opacity-0' : 'opacity-100',
         !isDragging ? 'transition-transform duration-75 ease-out' : ''
       ]"
       :style="{
@@ -22,6 +23,7 @@
         transformOrigin: 'center center'
       }"
       draggable="false"
+      @load="imageLoaded = true"
     />
   </div>
 </template>
@@ -33,15 +35,17 @@
     src: { type: String, required: true },
     alt: { type: String, default: "" }
   });
+
   const emit = defineEmits(["click"]);
 
   const container = ref(null);
   const image = ref(null);
+  const imageLoaded = ref(false);
 
   const scale = ref(1);
   const translateX = ref(0);
   const translateY = ref(0);
-  const isDragging = ref(false); // Tracks if the user is currently interacting
+  const isDragging = ref(false);
 
   const MIN_SCALE = 1;
   const MAX_SCALE = 5;
@@ -90,9 +94,12 @@
 
   const onPointerDown = e => {
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    pointers.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY
+    });
 
-    isDragging.value = true; // Disable transitions while fingers are down
+    isDragging.value = true;
 
     if (pointers.size === 1) {
       dragStartX = e.clientX;
@@ -101,12 +108,14 @@
       startTranslateY = translateY.value;
     } else if (pointers.size === 2) {
       const [p1, p2] = [...pointers.values()];
+
       startDistance = getDistance(p1, p2);
       startScale = scale.value;
       startTranslateX = translateX.value;
       startTranslateY = translateY.value;
 
       const center = getCenter(p1, p2);
+
       pinchMidX = center.x;
       pinchMidY = center.y;
     }
@@ -114,36 +123,40 @@
 
   const onPointerMove = e => {
     if (!pointers.has(e.pointerId)) return;
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // 1-Finger Pan
+    pointers.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY
+    });
+
     if (pointers.size === 1) {
       if (scale.value <= 1) return;
 
       translateX.value = startTranslateX + (e.clientX - dragStartX);
+
       translateY.value = startTranslateY + (e.clientY - dragStartY);
+
       return;
     }
 
-    // 2-Finger Pinch Zoom & Pan
     if (pointers.size === 2) {
       const [p1, p2] = [...pointers.values()];
+
       const currentDistance = getDistance(p1, p2);
       const currentCenter = getCenter(p1, p2);
 
       if (startDistance === 0) return;
 
       const pinchRatio = currentDistance / startDistance;
+
       let newScale = startScale * pinchRatio;
 
-      // Constrain scale with a slight elastic resistance feel out of bounds
       if (newScale < MIN_SCALE) {
         newScale = MIN_SCALE + (newScale - MIN_SCALE) * 0.2;
       } else if (newScale > MAX_SCALE) {
         newScale = MAX_SCALE + (newScale - MAX_SCALE) * 0.2;
       }
 
-      // Android gallery style: zoom into the exact midpoint between the fingers
       const scaleFactor = newScale / startScale;
 
       translateX.value =
@@ -166,17 +179,17 @@
     pointers.delete(e.pointerId);
 
     if (pointers.size === 1) {
-      // Transition smoothly back to 1-finger panning when lifting one finger
       const remainingPointer = [...pointers.values()][0];
+
       dragStartX = remainingPointer.x;
       dragStartY = remainingPointer.y;
+
       startTranslateX = translateX.value;
       startTranslateY = translateY.value;
     }
 
-    // Snap back or snap to bounds when fingers are released
     if (pointers.size === 0) {
-      isDragging.value = false; // Re-enable transitions for snap-back
+      isDragging.value = false;
 
       if (scale.value < MIN_SCALE) {
         reset();
@@ -188,13 +201,17 @@
 
   const getContainerCenterX = () => {
     if (!container.value) return 0;
+
     const rect = container.value.getBoundingClientRect();
+
     return rect.left + rect.width / 2;
   };
 
   const getContainerCenterY = () => {
     if (!container.value) return 0;
+
     const rect = container.value.getBoundingClientRect();
+
     return rect.top + rect.height / 2;
   };
 

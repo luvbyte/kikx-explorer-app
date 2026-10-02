@@ -21,6 +21,7 @@ const appConfigSchema = z.object({
   readOnly: z.boolean(),
 
   hideExtension: z.boolean(),
+  showDiskUsage: z.boolean(),
 
   // theme: string
   theme: z.string(),
@@ -50,7 +51,7 @@ const invoker = new Invoker(app);
 if (DEV) {
   app.config.configureUrls({
     apiUrl,
-    appID: "0528bfde19f84b2fa1914293dfb52ef4"
+    // appID: "0528bfde19f84b2fa1914293dfb52ef4"
   });
 }
 

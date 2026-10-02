@@ -23,6 +23,17 @@
         </svg>
       </button>
     </div>
+
+    <!-- Upload Path -->
+    <div
+      dir="rtl"
+      class="text-sm bg-primary/80 text-primary-content/60 overflow-x-auto"
+    >
+      <div dir="ltr" class="w-max min-w-full p-2">
+        {{ currentPath }}
+      </div>
+    </div>
+
     <!-- Upload Button -->
     <div class="flex items-center gap-2 p-2">
       <!-- Images -->
@@ -124,18 +135,17 @@
         @change="handleImages"
       />
 
-      <input
-        id="doc-upload"
-        type="file"
-        multiple
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-        class="hidden"
-        @change="handleDocuments"
-      />
+<input
+  id="doc-upload"
+  type="file"
+  multiple
+  class="hidden"
+  @change="handleDocuments"
+/>
     </div>
 
     <!-- Image Grid -->
-    <div class="p-2 flex-1 overflow-auto">
+    <div ref="fileList" class="p-2 flex-1 overflow-auto">
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
         <div
           v-for="(file, index) in files"
@@ -193,7 +203,7 @@
     <Transition name="fade-scale">
       <AlertConfirm
         v-if="showConfirm"
-        :message="`Do u want to upload ${files.length} files`"
+        :message="`Do u want to upload ${files.length} files to ${currentPath}`"
         @onResponse="uploadFiles"
       />
     </Transition>
@@ -201,7 +211,7 @@
 </template>
 
 <script setup>
-  import { ref, onBeforeUnmount } from "vue";
+  import { ref, nextTick, onBeforeUnmount } from "vue";
 
   import AlertConfirm from "@/components/ui/AlertConfirm.vue";
   import Loading from "@/components/Loading.vue";
@@ -212,15 +222,29 @@
   const errors = useErrorStore();
 
   const showConfirm = ref(false);
-  
+
   const props = defineProps({
-    currentPath: String,
-    required: true
-  })
+    currentPath: {
+      type: String,
+      required: true
+    }
+  });
   const emit = defineEmits(["close", "update"]);
 
   const files = ref([]);
   const uploading = ref(false);
+  const fileList = ref(null);
+
+  const scrollToBottom = async () => {
+    await nextTick();
+
+    if (fileList.value) {
+      fileList.value.scrollTo({
+        top: fileList.value.scrollHeight,
+        behavior: "smooth"
+      });
+    }
+  };
 
   const handleImages = e => {
     const items = Array.from(e.target.files).map(file => ({
@@ -231,7 +255,10 @@
     }));
 
     files.value.push(...items);
+
     e.target.value = "";
+
+    scrollToBottom();
   };
 
   const handleDocuments = e => {
@@ -243,7 +270,10 @@
     }));
 
     files.value.push(...items);
+
     e.target.value = "";
+
+    scrollToBottom();
   };
 
   const removeFile = index => {
