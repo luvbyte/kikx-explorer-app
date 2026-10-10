@@ -16,3 +16,7 @@
 - Updated File context menu ui
 - Image thumbnail animations
 - Changed alert ui style
+
+## [0.1.9]
+### Changed
+- Updated app icon :)
